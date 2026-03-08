@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchCheckoutSummary, type CheckoutConfig } from "@/lib/productQueries";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { toast } from "@/hooks/use-toast";
 import { MapPin, Plus, Check } from "lucide-react";
 
 interface CheckoutStepProps {
