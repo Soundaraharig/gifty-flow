@@ -121,12 +121,24 @@ const CheckoutStep = ({ config, onOrderPlaced }: CheckoutStepProps) => {
 
       if (error) throw error;
 
+      // Fetch editing style image URL
+      let styleImageUrl: string | null = null;
+      if (config.editingStyleId) {
+        const { data: styleData } = await supabase
+          .from("editing_styles")
+          .select("image_url")
+          .eq("id", config.editingStyleId)
+          .maybeSingle();
+        styleImageUrl = styleData?.image_url ?? null;
+      }
+
       // Send WhatsApp notification with order details
       const orderText = [
         `🎁 *New Order #${order.id.slice(0, 8)}*`,
         `👤 ${name.trim()}`,
         `📱 ${phone.trim()}`,
         summary?.styleName ? `🎨 Style: ${summary.styleName}` : null,
+        styleImageUrl ? `🖼️ Style Image: ${styleImageUrl}` : null,
         summary?.sizeName ? `📐 Size: ${summary.sizeName}` : null,
         summary?.materialName ? `🖼 Frame: ${summary.materialName}` : null,
         address.trim() ? `📍 ${address.trim()}` : null,
