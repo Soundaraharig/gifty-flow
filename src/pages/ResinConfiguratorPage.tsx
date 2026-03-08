@@ -167,7 +167,7 @@ const ResinConfiguratorPage = () => {
                 <span className="text-sm text-muted-foreground line-through">
                   ₹{Math.round(modalProduct.price * 1.25)}
                 </span>
-                <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium ml-1">
+                <span className="text-xs bg-accent/20 text-accent-foreground px-2 py-0.5 rounded-full font-medium ml-1">
                   20% OFF
                 </span>
               </div>
