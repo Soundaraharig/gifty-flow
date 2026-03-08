@@ -1,5 +1,11 @@
-import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const headers = {
+  'apikey': SUPABASE_KEY,
+  'Authorization': `Bearer ${SUPABASE_KEY}`,
+};
 
 interface PriceBarProps {
   selectedStyleId: string | null;
@@ -14,26 +20,23 @@ interface PriceBarProps {
 }
 
 const PriceBar = ({ selectedStyleId, selectedSizeId, selectedMaterialId, selectedAddonIds, currentStep, totalSteps, canProceed, onNext, onBack }: PriceBarProps) => {
-  // Calculate total from DB prices
   const { data: total = 0 } = useQuery({
     queryKey: ["price_total", selectedStyleId, selectedSizeId, selectedMaterialId, selectedAddonIds],
     queryFn: async () => {
       let sum = 0;
-      if (selectedStyleId) {
-        const { data } = await supabase.from("editing_styles").select("price").eq("id", selectedStyleId).single();
-        if (data) sum += data.price;
-      }
-      if (selectedSizeId) {
-        const { data } = await supabase.from("sizes").select("price").eq("id", selectedSizeId).single();
-        if (data) sum += data.price;
-      }
-      if (selectedMaterialId) {
-        const { data } = await supabase.from("frame_materials").select("price").eq("id", selectedMaterialId).single();
-        if (data) sum += data.price;
-      }
+      const fetchPrice = async (table: string, id: string) => {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}&select=price`, { headers });
+        const data = await res.json();
+        return data?.[0]?.price ?? 0;
+      };
+      if (selectedStyleId) sum += await fetchPrice("editing_styles", selectedStyleId);
+      if (selectedSizeId) sum += await fetchPrice("sizes", selectedSizeId);
+      if (selectedMaterialId) sum += await fetchPrice("frame_materials", selectedMaterialId);
       if (selectedAddonIds.length > 0) {
-        const { data } = await supabase.from("addons").select("price").in("id", selectedAddonIds);
-        if (data) sum += data.reduce((acc, a) => acc + a.price, 0);
+        const ids = selectedAddonIds.map(id => `"${id}"`).join(',');
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/addons?id=in.(${ids})&select=price`, { headers });
+        const data = await res.json();
+        if (data) sum += data.reduce((acc: number, a: any) => acc + a.price, 0);
       }
       return sum;
     },
