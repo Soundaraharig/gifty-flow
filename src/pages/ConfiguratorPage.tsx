@@ -223,7 +223,7 @@ const ConfiguratorPage = () => {
               {/* View More button */}
               {previewStyle && userSelected && (
                 <button
-                  onClick={() => setShowGallery(true)}
+                  onClick={() => navigate(`/style-gallery/${previewStyle.id}`)}
                   className="absolute bottom-3 right-3 px-3 py-1.5 rounded-full bg-card/90 backdrop-blur-sm border border-border text-xs font-medium text-foreground hover:bg-card transition-colors flex items-center gap-1.5 shadow-sm"
                 >
                   <span>🖼️</span> View More
@@ -402,19 +402,7 @@ const ConfiguratorPage = () => {
         </div>
       </div>
 
-      {/* Style Gallery Modal */}
-      {showGallery && previewStyle && (
-        <StyleGalleryModal
-          styleId={previewStyle.id}
-          styleName={previewStyle.name}
-          onClose={() => setShowGallery(false)}
-          onSelectAndBuy={() => {
-            setShowGallery(false);
-            // Scroll to size selection
-            document.getElementById("size-section")?.scrollIntoView({ behavior: "smooth" });
-          }}
-        />
-      )}
+      {/* Gallery now on separate page */}
 
       {/* Sticky Buy Bar */}
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-lg border-t border-border shadow-[0_-4px_30px_rgba(0,0,0,0.08)]">
