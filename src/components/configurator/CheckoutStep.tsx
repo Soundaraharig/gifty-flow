@@ -121,9 +121,22 @@ const CheckoutStep = ({ config, onOrderPlaced }: CheckoutStepProps) => {
 
       if (error) throw error;
 
-      await supabase.functions.invoke("send-order-email", {
-        body: { orderId: order.id },
-      });
+      // Send WhatsApp notification with order details
+      const orderText = [
+        `🎁 *New Order #${order.id.slice(0, 8)}*`,
+        `👤 ${name.trim()}`,
+        `📱 ${phone.trim()}`,
+        summary?.styleName ? `🎨 Style: ${summary.styleName}` : null,
+        summary?.sizeName ? `📐 Size: ${summary.sizeName}` : null,
+        summary?.materialName ? `🖼 Frame: ${summary.materialName}` : null,
+        address.trim() ? `📍 ${address.trim()}` : null,
+        notes.trim() ? `📝 ${notes.trim()}` : null,
+        `💰 Total: ₹${summary?.total ?? 0}`,
+      ].filter(Boolean).join("\n");
+
+      const adminPhone = "919876543210"; // Replace with your WhatsApp number
+      const waUrl = `https://wa.me/${adminPhone}?text=${encodeURIComponent(orderText)}`;
+      window.open(waUrl, "_blank");
 
       toast({
         title: "Order placed! 🎉",
