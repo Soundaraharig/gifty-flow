@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Header from "@/components/Header";
 
-type Tab = "styles" | "sizes" | "materials" | "colors" | "addons" | "orders";
+type Tab = "styles" | "sizes" | "materials" | "colors" | "addons" | "orders" | "gallery";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
@@ -45,6 +45,7 @@ const AdminPage = () => {
     { id: "colors", label: "Frame Colors" },
     { id: "addons", label: "Add-ons" },
     { id: "orders", label: "Orders" },
+    { id: "gallery", label: "Gallery Images" },
   ];
 
   return (
@@ -78,6 +79,7 @@ const AdminPage = () => {
         {tab === "colors" && <AdminFrameColors />}
         {tab === "addons" && <AdminAddons />}
         {tab === "orders" && <AdminOrders />}
+        {tab === "gallery" && <AdminGalleryImages />}
       </div>
     </div>
   );
@@ -508,6 +510,163 @@ const AdminAddons = () => (
     )}
   />
 );
+
+// --- Gallery Images (per editing style) ---
+const AdminGalleryImages = () => {
+  const qc = useQueryClient();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [selectedStyleId, setSelectedStyleId] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [editingTitle, setEditingTitle] = useState<{ id: string; title: string } | null>(null);
+
+  const { data: styles = [] } = useQuery({
+    queryKey: ["admin_editing_styles"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("editing_styles").select("*").order("sort_order");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const { data: galleryImages = [], isLoading } = useQuery({
+    queryKey: ["admin_gallery", selectedStyleId],
+    queryFn: async () => {
+      if (!selectedStyleId) return [];
+      const { data, error } = await supabase
+        .from("style_gallery_images" as any)
+        .select("*")
+        .eq("editing_style_id", selectedStyleId)
+        .order("sort_order");
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+    enabled: !!selectedStyleId,
+  });
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedStyleId) return;
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `gallery/${selectedStyleId}/${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("product-images").upload(path, file, { upsert: true });
+      if (error) throw error;
+      const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/product-images/${path}`;
+      const { error: insertError } = await supabase.from("style_gallery_images" as any).insert({
+        editing_style_id: selectedStyleId,
+        image_url: publicUrl,
+        sort_order: galleryImages.length,
+      } as any);
+      if (insertError) throw insertError;
+      qc.invalidateQueries({ queryKey: ["admin_gallery", selectedStyleId] });
+    } catch (err: any) {
+      alert("Upload failed: " + err.message);
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
+
+  const deleteImage = async (id: string) => {
+    if (!confirm("Delete this gallery image?")) return;
+    const { error } = await supabase.from("style_gallery_images" as any).delete().eq("id", id);
+    if (error) alert("Delete failed: " + error.message);
+    else qc.invalidateQueries({ queryKey: ["admin_gallery", selectedStyleId] });
+  };
+
+  const updateTitle = async (id: string, title: string) => {
+    const { error } = await supabase.from("style_gallery_images" as any).update({ title } as any).eq("id", id);
+    if (error) alert("Update failed: " + error.message);
+    else {
+      qc.invalidateQueries({ queryKey: ["admin_gallery", selectedStyleId] });
+      setEditingTitle(null);
+    }
+  };
+
+  return (
+    <div>
+      <h2 className="font-display text-xl font-bold text-foreground mb-4">Gallery Images</h2>
+      <p className="text-sm text-muted-foreground mb-4">Upload model images per editing style. Users can browse these from the "View More" button.</p>
+
+      {/* Style Selector */}
+      <div className="flex flex-wrap gap-2 mb-6">
+        {styles.map((s: any) => (
+          <button
+            key={s.id}
+            onClick={() => setSelectedStyleId(s.id)}
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+              selectedStyleId === s.id
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-muted-foreground hover:bg-muted/80"
+            }`}
+          >
+            {s.name}
+          </button>
+        ))}
+      </div>
+
+      {!selectedStyleId ? (
+        <p className="text-muted-foreground text-sm">Select a style above to manage its gallery images.</p>
+      ) : (
+        <>
+          {/* Upload button */}
+          <div className="mb-4">
+            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleUpload} />
+            <button
+              onClick={() => fileRef.current?.click()}
+              disabled={uploading}
+              className="px-4 py-2 rounded-full bg-primary text-primary-foreground text-sm font-medium disabled:opacity-50"
+            >
+              {uploading ? "Uploading..." : "+ Upload Image"}
+            </button>
+          </div>
+
+          {/* Grid of images */}
+          {isLoading ? (
+            <p className="text-muted-foreground text-sm">Loading...</p>
+          ) : galleryImages.length === 0 ? (
+            <p className="text-muted-foreground text-sm">No gallery images for this style yet.</p>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              {galleryImages.map((img: any) => (
+                <div key={img.id} className="relative group rounded-xl overflow-hidden border border-border bg-card">
+                  <img src={img.image_url} alt={img.title || ""} className="w-full aspect-square object-cover" />
+                  <div className="p-2 space-y-1">
+                    {editingTitle?.id === img.id ? (
+                      <div className="flex gap-1">
+                        <input
+                          className={inputClass}
+                          value={editingTitle.title}
+                          onChange={(e) => setEditingTitle({ ...editingTitle, title: e.target.value })}
+                          placeholder="Title"
+                        />
+                        <button onClick={() => updateTitle(img.id, editingTitle.title)} className="text-primary text-xs">✓</button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setEditingTitle({ id: img.id, title: img.title || "" })}
+                        className="text-xs text-muted-foreground hover:text-foreground truncate block w-full text-left"
+                      >
+                        {img.title || "Add title..."}
+                      </button>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => deleteImage(img.id)}
+                    className="absolute top-1 right-1 w-6 h-6 rounded-full bg-destructive/80 text-destructive-foreground text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+};
 
 // --- Orders ---
 const AdminOrders = () => {
