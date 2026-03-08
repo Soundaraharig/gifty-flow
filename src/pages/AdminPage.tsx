@@ -43,16 +43,18 @@ const AdminPage = () => {
     );
   }
 
-  const tabs: { id: Tab; label: string }[] = [
+  const allTabs: { id: Tab; label: string; adminOnly?: boolean }[] = [
     { id: "styles", label: "Editing Styles" },
     { id: "sizes", label: "Sizes" },
     { id: "materials", label: "Frame Materials" },
     { id: "resin", label: "Resin Types" },
     { id: "orders", label: "Orders" },
     { id: "gallery", label: "Gallery Images" },
-    { id: "users", label: "Users" },
-    { id: "settings", label: "Settings" },
+    { id: "users", label: "Users", adminOnly: true },
+    { id: "settings", label: "Settings", adminOnly: true },
   ];
+
+  const tabs = allTabs.filter((t) => !t.adminOnly || isAdmin);
 
   return (
     <div className="min-h-screen bg-background">
