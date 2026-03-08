@@ -10,7 +10,7 @@ interface CheckoutStepProps {
   onOrderPlaced?: () => void;
 }
 
-const CheckoutStep = ({ config }: CheckoutStepProps) => {
+const CheckoutStep = ({ config, onOrderPlaced }: CheckoutStepProps) => {
   const { user } = useAuth();
   const [name, setName] = useState(user?.user_metadata?.full_name || "");
   const [phone, setPhone] = useState("");
@@ -57,6 +57,8 @@ const CheckoutStep = ({ config }: CheckoutStepProps) => {
         title: "Order placed! 🎉",
         description: "We've received your order. You'll hear from us soon!",
       });
+
+      onOrderPlaced?.();
     } catch (err: any) {
       toast({
         title: "Error placing order",
