@@ -214,39 +214,6 @@ const ConfiguratorPage = () => {
 
             <div className="h-px bg-border" />
 
-            {/* Style Selection */}
-            <div>
-              <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider mb-3">
-                Art Style
-              </h3>
-              <div className="grid grid-cols-2 gap-2.5">
-                {styles?.map((style: any) =>
-                <button
-                  key={style.id}
-                  onClick={() => setConfig((p) => ({ ...p, editingStyleId: style.id }))}
-                  className={`flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all duration-200 ${
-                  config.editingStyleId === style.id ?
-                  "border-primary bg-primary/5 shadow-sm" :
-                  "border-border bg-card hover:border-primary/40"}`
-                  }>
-                  
-                    <img
-                    src={style.image_url || FALLBACK_IMAGES[style.slug]}
-                    alt={style.name}
-                    className="w-10 h-10 rounded-lg object-cover shrink-0"
-                    loading="lazy" />
-                  
-                    <div className="min-w-0">
-                      <p className="font-medium text-sm text-foreground truncate">{style.name}</p>
-                      <p className="text-xs text-primary font-semibold">+₹{style.price}</p>
-                    </div>
-                  </button>
-                )}
-              </div>
-            </div>
-
-            <div className="h-px bg-border" />
-
             {/* Size Selection */}
             <div>
               <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider mb-3">
