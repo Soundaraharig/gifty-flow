@@ -435,7 +435,7 @@ const ConfiguratorPage = () => {
           <div className="flex items-center gap-2">
             {!canBuy &&
             <p className="text-[10px] text-destructive font-medium">
-                {!config.editingStyleId ? "Select a style" : !config.sizeId ? "Select a size" : "Select frame material"}
+                {!config.editingStyleId ? "Select a style" : !config.sizeId ? "Select a size" : "Select frame colour"}
               </p>
             }
             {canBuy && (
