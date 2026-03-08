@@ -286,6 +286,42 @@ export type Database = {
         }
         Relationships: []
       }
+      resin_product_types: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          name: string
+          price: number
+          slug: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name: string
+          price?: number
+          slug: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name?: string
+          price?: number
+          slug?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
       site_settings: {
         Row: {
           key: string
