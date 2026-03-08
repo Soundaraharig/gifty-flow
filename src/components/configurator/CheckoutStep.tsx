@@ -7,6 +7,7 @@ import { toast } from "@/hooks/use-toast";
 
 interface CheckoutStepProps {
   config: CheckoutConfig;
+  onOrderPlaced?: () => void;
 }
 
 const CheckoutStep = ({ config }: CheckoutStepProps) => {
