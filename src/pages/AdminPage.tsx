@@ -42,6 +42,7 @@ const AdminPage = () => {
     { id: "styles", label: "Editing Styles" },
     { id: "sizes", label: "Sizes" },
     { id: "materials", label: "Frame Materials" },
+    { id: "resin", label: "Resin Types" },
     { id: "orders", label: "Orders" },
     { id: "gallery", label: "Gallery Images" },
     { id: "settings", label: "Settings" },
@@ -75,6 +76,7 @@ const AdminPage = () => {
         {tab === "styles" && <AdminEditingStyles />}
         {tab === "sizes" && <AdminSizes />}
         {tab === "materials" && <AdminFrameMaterials />}
+        {tab === "resin" && <AdminResinTypes />}
         {tab === "orders" && <AdminOrders />}
         {tab === "gallery" && <AdminGalleryImages />}
         {tab === "settings" && <AdminSettings />}
@@ -350,6 +352,62 @@ const AdminEditingStyles = () => (
         <div>
           <label className="text-xs text-muted-foreground mb-1 block">Style Image</label>
           <ImageUploadField value={v.image_url || ""} onChange={(url) => set("image_url", url)} folder="styles" />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Price (₹)</label>
+            <input className={inputClass} type="number" value={v.price || 0} onChange={(e) => set("price", +e.target.value)} />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Sort Order</label>
+            <input className={inputClass} type="number" value={v.sort_order || 0} onChange={(e) => set("sort_order", +e.target.value)} />
+          </div>
+        </div>
+        <label className="flex items-center gap-2 text-sm text-foreground">
+          <input type="checkbox" checked={!!v.is_active} onChange={(e) => set("is_active", e.target.checked)} />
+          Active
+        </label>
+      </>
+    )}
+  />
+);
+
+// --- Resin Product Types (with image upload) ---
+const AdminResinTypes = () => (
+  <AdminCrudTable
+    tableName="resin_product_types"
+    queryKey="admin_resin_product_types"
+    columns={[
+      {
+        key: "image_url", label: "Image",
+        render: (val: string) => val ? <img src={val} alt="" className="w-12 h-8 object-cover rounded" /> : <span className="text-muted-foreground text-xs">No image</span>
+      },
+      { key: "name", label: "Name" },
+      { key: "slug", label: "Slug" },
+      { key: "price", label: "Price (₹)" },
+      { key: "is_active", label: "Active", render: (val: boolean) => val ? "✅" : "❌" },
+      { key: "sort_order", label: "Order" },
+    ]}
+    defaultValues={{ slug: "", name: "", description: "", price: 0, image_url: "", sort_order: 0, is_active: true }}
+    renderForm={(v, set) => (
+      <>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Name</label>
+            <input className={inputClass} placeholder="Name" value={v.name || ""} onChange={(e) => set("name", e.target.value)} />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Slug</label>
+            <input className={inputClass} placeholder="Slug (e.g. resin-coasters)" value={v.slug || ""} onChange={(e) => set("slug", e.target.value)} />
+          </div>
+        </div>
+        <div>
+          <label className="text-xs text-muted-foreground mb-1 block">Description</label>
+          <input className={inputClass} placeholder="Short description" value={v.description || ""} onChange={(e) => set("description", e.target.value)} />
+        </div>
+        <div>
+          <label className="text-xs text-muted-foreground mb-1 block">Product Image</label>
+          <ImageUploadField value={v.image_url || ""} onChange={(url) => set("image_url", url)} folder="resin" />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
