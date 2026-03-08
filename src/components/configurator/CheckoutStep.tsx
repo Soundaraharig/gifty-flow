@@ -279,7 +279,7 @@ const CheckoutStep = ({ config, selectedGalleryImage, onOrderPlaced }: CheckoutS
               <span className="text-foreground">{summary?.sizeName} — ₹{summary?.sizePrice ?? 0}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-muted-foreground">🖼 Frame</span>
+              <span className="text-muted-foreground">🖼 Frame Colour</span>
               <span className="text-foreground">
                 {summary?.materialName}
                 {(summary?.materialPrice ?? 0) > 0 ? ` — ₹${summary?.materialPrice}` : " — Free"}
