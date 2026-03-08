@@ -13,9 +13,9 @@ const steps = [
   },
   {
     number: "03",
-    emoji: "📸",
-    title: "Upload Your Photo",
-    description: "Share your favorite photo and we'll transform it into art.",
+    emoji: "📞",
+    title: "Team Will Contact You",
+    description: "Our team will reach out to collect your photo & finalize details.",
   },
   {
     number: "04",
