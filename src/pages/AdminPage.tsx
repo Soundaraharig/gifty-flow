@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Header from "@/components/Header";
 
-type Tab = "styles" | "sizes" | "materials" | "colors" | "addons" | "orders" | "gallery";
+type Tab = "styles" | "sizes" | "materials" | "orders" | "gallery";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
@@ -42,8 +42,6 @@ const AdminPage = () => {
     { id: "styles", label: "Editing Styles" },
     { id: "sizes", label: "Sizes" },
     { id: "materials", label: "Frame Materials" },
-    { id: "colors", label: "Frame Colors" },
-    { id: "addons", label: "Add-ons" },
     { id: "orders", label: "Orders" },
     { id: "gallery", label: "Gallery Images" },
   ];
@@ -76,8 +74,6 @@ const AdminPage = () => {
         {tab === "styles" && <AdminEditingStyles />}
         {tab === "sizes" && <AdminSizes />}
         {tab === "materials" && <AdminFrameMaterials />}
-        {tab === "colors" && <AdminFrameColors />}
-        {tab === "addons" && <AdminAddons />}
         {tab === "orders" && <AdminOrders />}
         {tab === "gallery" && <AdminGalleryImages />}
       </div>
@@ -417,99 +413,6 @@ const AdminFrameMaterials = () => (
   />
 );
 
-// --- Frame Colors ---
-const AdminFrameColors = () => (
-  <AdminCrudTable
-    tableName="frame_colors"
-    queryKey="admin_frame_colors"
-    columns={[
-      { key: "name", label: "Name" },
-      { key: "hex", label: "Color", render: (val: string) => (
-        <div className="flex items-center gap-2">
-          <div className="w-5 h-5 rounded-full border border-border" style={{ backgroundColor: val }} />
-          <span>{val}</span>
-        </div>
-      )},
-      { key: "is_active", label: "Active", render: (val: boolean) => val ? "✅" : "❌" },
-      { key: "sort_order", label: "Order" },
-    ]}
-    defaultValues={{ slug: "", name: "", hex: "#000000", sort_order: 0, is_active: true }}
-    renderForm={(v, set) => (
-      <>
-        <div className="grid grid-cols-3 gap-3">
-          <div>
-            <label className="text-xs text-muted-foreground mb-1 block">Name</label>
-            <input className={inputClass} placeholder="e.g. Black" value={v.name || ""} onChange={(e) => set("name", e.target.value)} />
-          </div>
-          <div>
-            <label className="text-xs text-muted-foreground mb-1 block">Slug</label>
-            <input className={inputClass} placeholder="e.g. black" value={v.slug || ""} onChange={(e) => set("slug", e.target.value)} />
-          </div>
-          <div>
-            <label className="text-xs text-muted-foreground mb-1 block">Color</label>
-            <input className={inputClass} type="color" value={v.hex || "#000000"} onChange={(e) => set("hex", e.target.value)} />
-          </div>
-        </div>
-        <div>
-          <label className="text-xs text-muted-foreground mb-1 block">Sort Order</label>
-          <input className={inputClass} type="number" value={v.sort_order || 0} onChange={(e) => set("sort_order", +e.target.value)} />
-        </div>
-        <label className="flex items-center gap-2 text-sm text-foreground">
-          <input type="checkbox" checked={!!v.is_active} onChange={(e) => set("is_active", e.target.checked)} />
-          Active
-        </label>
-      </>
-    )}
-  />
-);
-
-// --- Add-ons ---
-const AdminAddons = () => (
-  <AdminCrudTable
-    tableName="addons"
-    queryKey="admin_addons"
-    columns={[
-      { key: "emoji", label: "Icon" },
-      { key: "name", label: "Name" },
-      { key: "price", label: "Price (₹)" },
-      { key: "is_active", label: "Active", render: (val: boolean) => val ? "✅" : "❌" },
-      { key: "sort_order", label: "Order" },
-    ]}
-    defaultValues={{ slug: "", name: "", emoji: "", price: 0, sort_order: 0, is_active: true }}
-    renderForm={(v, set) => (
-      <>
-        <div className="grid grid-cols-3 gap-3">
-          <div>
-            <label className="text-xs text-muted-foreground mb-1 block">Name</label>
-            <input className={inputClass} placeholder="e.g. Gift Wrap" value={v.name || ""} onChange={(e) => set("name", e.target.value)} />
-          </div>
-          <div>
-            <label className="text-xs text-muted-foreground mb-1 block">Slug</label>
-            <input className={inputClass} placeholder="e.g. gift-wrap" value={v.slug || ""} onChange={(e) => set("slug", e.target.value)} />
-          </div>
-          <div>
-            <label className="text-xs text-muted-foreground mb-1 block">Emoji</label>
-            <input className={inputClass} placeholder="e.g. 🎁" value={v.emoji || ""} onChange={(e) => set("emoji", e.target.value)} />
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="text-xs text-muted-foreground mb-1 block">Price (₹)</label>
-            <input className={inputClass} type="number" value={v.price || 0} onChange={(e) => set("price", +e.target.value)} />
-          </div>
-          <div>
-            <label className="text-xs text-muted-foreground mb-1 block">Sort Order</label>
-            <input className={inputClass} type="number" value={v.sort_order || 0} onChange={(e) => set("sort_order", +e.target.value)} />
-          </div>
-        </div>
-        <label className="flex items-center gap-2 text-sm text-foreground">
-          <input type="checkbox" checked={!!v.is_active} onChange={(e) => set("is_active", e.target.checked)} />
-          Active
-        </label>
-      </>
-    )}
-  />
-);
 
 // --- Gallery Images (per editing style) ---
 const AdminGalleryImages = () => {
