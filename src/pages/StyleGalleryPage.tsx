@@ -154,7 +154,8 @@ const StyleGalleryPage = () => {
               <div className="h-px bg-border" />
 
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Starting from</p>
+                <p className="text-sm text-muted-foreground mb-1">
+</p>
                 <p className="font-display text-3xl font-bold text-primary">₹{style?.price || 0}</p>
               </div>
 
@@ -188,12 +189,11 @@ const StyleGalleryPage = () => {
               </div>
 
               {/* Select button */}
-              <button
-              onClick={() => {
-                const imgUrl = mainImage?.image_url || style?.image_url || "";
-                navigate(`/configure/photo-frames?style=${styleId}&img=${encodeURIComponent(imgUrl)}`);
-              }}
-              className="w-full px-8 py-4 rounded-full bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold text-base shadow-rose hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2">
+              <button onClick={() => {
+              const imgUrl = mainImage?.image_url || style?.image_url || "";
+              navigate(`/configure/photo-frames?style=${styleId}&img=${encodeURIComponent(imgUrl)}`);
+            }}
+            className="w-full px-8 py-4 rounded-full bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold text-base shadow-rose hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2">
               
                 ✨ Select
               </button>
