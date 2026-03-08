@@ -24,13 +24,13 @@ const Header = () => {
           <a href="/categories" className="hidden md:inline text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
             Categories
           </a>
-          {/* VIP Crown */}
-          {user && !isAdmin && (
+          {/* VIP Crown - visible to all logged-in users */}
+          {user && (
             <button
               onClick={() => navigate("/subscribe")}
               className={`p-2 rounded-full transition-colors ${
                 isSubscriber
-                  ? "text-primary bg-primary/10"
+                  ? "text-primary bg-primary/10 animate-pulse"
                   : "text-muted-foreground hover:text-primary hover:bg-primary/5"
               }`}
               title={isSubscriber ? "VIP Subscriber" : "Become a VIP"}
