@@ -176,10 +176,10 @@ const ConfiguratorPage = () => {
 
       <div className="container mx-auto px-4 pt-20 max-w-5xl">
         <button
-          onClick={() => navigate("/")}
+          onClick={() => navigate("/categories")}
           className="text-sm text-muted-foreground hover:text-foreground mb-4 inline-flex items-center gap-1">
           
-          ← Back to Home
+          ← Back to Categories
         </button>
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-4 lg:gap-6">
