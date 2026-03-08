@@ -596,6 +596,15 @@ const AdminOrders = () => {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin_orders"] }),
   });
 
+  const deleteOrder = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("orders").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin_orders"] }),
+    onError: (err: any) => alert("Delete failed: " + err.message),
+  });
+
   return (
     <div>
       <h2 className="font-display text-xl font-bold text-foreground mb-4">Orders</h2>
@@ -630,7 +639,15 @@ const AdminOrders = () => {
               <p className="text-xs text-muted-foreground mt-2">
                 {order.editing_styles?.name} • {order.sizes?.name} • {order.frame_materials?.name} / {order.frame_colors?.name}
               </p>
-              <p className="text-xs text-muted-foreground">{new Date(order.created_at).toLocaleString()}</p>
+              <div className="flex justify-between items-center mt-2">
+                <p className="text-xs text-muted-foreground">{new Date(order.created_at).toLocaleString()}</p>
+                <button
+                  onClick={() => { if (confirm("Delete this order permanently?")) deleteOrder.mutate(order.id); }}
+                  className="text-xs text-destructive hover:underline"
+                >
+                  Delete
+                </button>
+              </div>
             </div>
           ))}
         </div>
