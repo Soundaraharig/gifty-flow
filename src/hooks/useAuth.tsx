@@ -5,6 +5,7 @@ import type { User } from "@supabase/supabase-js";
 interface AuthContext {
   user: User | null;
   isAdmin: boolean;
+  isSubscriber: boolean;
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -13,6 +14,7 @@ interface AuthContext {
 const AuthContext = createContext<AuthContext>({
   user: null,
   isAdmin: false,
+  isSubscriber: false,
   loading: true,
   signInWithGoogle: async () => {},
   signOut: async () => {},
@@ -21,17 +23,23 @@ const AuthContext = createContext<AuthContext>({
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isSubscriber, setIsSubscriber] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const checkAdmin = (userId: string) => {
+  const checkRole = (userId: string) => {
     supabase
       .from("user_roles")
       .select("role")
       .eq("user_id", userId)
-      .eq("role", "admin")
       .maybeSingle()
       .then(({ data, error }) => {
-        setIsAdmin(!error && !!data);
+        if (!error && data) {
+          setIsAdmin(data.role === "admin");
+          setIsSubscriber(data.role === "subscriber");
+        } else {
+          setIsAdmin(false);
+          setIsSubscriber(false);
+        }
         setLoading(false);
       });
   };
@@ -42,21 +50,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const u = session?.user ?? null;
       setUser(u);
       if (u) {
-        checkAdmin(u.id);
+        checkRole(u.id);
       } else {
         setLoading(false);
       }
     });
 
-    // Listen for subsequent changes (don't await anything here)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         const u = session?.user ?? null;
         setUser(u);
         if (u) {
-          checkAdmin(u.id);
+          checkRole(u.id);
         } else {
           setIsAdmin(false);
+          setIsSubscriber(false);
           setLoading(false);
         }
       }
@@ -94,10 +102,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     await supabase.auth.signOut();
     setUser(null);
     setIsAdmin(false);
+    setIsSubscriber(false);
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAdmin, loading, signInWithGoogle, signOut }}>
+    <AuthContext.Provider value={{ user, isAdmin, isSubscriber, loading, signInWithGoogle, signOut }}>
       {children}
     </AuthContext.Provider>
   );

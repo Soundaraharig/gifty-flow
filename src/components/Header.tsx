@@ -3,10 +3,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { useCart } from "@/hooks/useCart";
 import { useTheme } from "@/hooks/useTheme";
 import { useNavigate } from "react-router-dom";
-import { Shield, LogOut, LogIn, ShoppingCart, Sun, Moon } from "lucide-react";
+import { Shield, LogOut, LogIn, ShoppingCart, Sun, Moon, Crown } from "lucide-react";
 
 const Header = () => {
-  const { user, isAdmin, loading, signInWithGoogle, signOut } = useAuth();
+  const { user, isAdmin, isSubscriber, loading, signInWithGoogle, signOut } = useAuth();
   const { totalItems } = useCart();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
@@ -24,6 +24,20 @@ const Header = () => {
           <a href="/categories" className="hidden md:inline text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
             Categories
           </a>
+          {/* VIP Crown */}
+          {user && !isAdmin && (
+            <button
+              onClick={() => navigate("/subscribe")}
+              className={`p-2 rounded-full transition-colors ${
+                isSubscriber
+                  ? "text-primary bg-primary/10"
+                  : "text-muted-foreground hover:text-primary hover:bg-primary/5"
+              }`}
+              title={isSubscriber ? "VIP Subscriber" : "Become a VIP"}
+            >
+              <Crown size={20} />
+            </button>
+          )}
           <button
             onClick={toggleTheme}
             className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
@@ -44,11 +58,11 @@ const Header = () => {
               </span>
             )}
           </button>
-          {isAdmin && (
+          {(isAdmin || isSubscriber) && (
             <button
               onClick={() => navigate("/admin")}
               className="p-2 rounded-full text-primary hover:bg-primary/10 transition-colors"
-              title="Admin Dashboard"
+              title={isAdmin ? "Admin Dashboard" : "Subscriber Dashboard"}
             >
               <Shield size={20} />
             </button>

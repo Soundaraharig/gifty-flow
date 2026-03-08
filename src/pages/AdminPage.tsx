@@ -6,13 +6,14 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Header from "@/components/Header";
 
 import AdminUsers from "@/components/admin/AdminUsers";
+import AdminSubscriptions from "@/components/admin/AdminSubscriptions";
 
-type Tab = "styles" | "sizes" | "materials" | "orders" | "gallery" | "resin" | "settings" | "users";
+type Tab = "styles" | "sizes" | "materials" | "orders" | "gallery" | "resin" | "settings" | "users" | "subscriptions";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
 const AdminPage = () => {
-  const { user, isAdmin, loading, signInWithGoogle } = useAuth();
+  const { user, isAdmin, isSubscriber, loading, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>("styles");
 
@@ -30,33 +31,48 @@ const AdminPage = () => {
     );
   }
 
-  if (!isAdmin) {
+  if (!isAdmin && !isSubscriber) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-background">
-        <p className="text-destructive font-semibold">Access denied. Admins only.</p>
+        <p className="text-destructive font-semibold">Access denied.</p>
         <p className="text-sm text-muted-foreground">Signed in as {user.email}</p>
         <button onClick={() => navigate("/")} className="text-primary underline">Go Home</button>
       </div>
     );
   }
 
-  const tabs: { id: Tab; label: string }[] = [
+  // Subscriber sees limited tabs; admin sees all
+  const adminTabs: { id: Tab; label: string }[] = [
     { id: "styles", label: "Editing Styles" },
     { id: "sizes", label: "Sizes" },
     { id: "materials", label: "Frame Materials" },
     { id: "resin", label: "Resin Types" },
     { id: "orders", label: "Orders" },
     { id: "gallery", label: "Gallery Images" },
+    { id: "subscriptions", label: "Subscriptions" },
     { id: "users", label: "Users" },
     { id: "settings", label: "Settings" },
   ];
+
+  const subscriberTabs: { id: Tab; label: string }[] = [
+    { id: "styles", label: "Editing Styles" },
+    { id: "sizes", label: "Sizes" },
+    { id: "materials", label: "Frame Materials" },
+    { id: "resin", label: "Resin Types" },
+    { id: "orders", label: "Orders" },
+    { id: "gallery", label: "Gallery Images" },
+  ];
+
+  const tabs = isAdmin ? adminTabs : subscriberTabs;
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
       <div className="container mx-auto px-4 pt-24 pb-12 max-w-4xl">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="font-display text-3xl font-bold text-foreground">Admin Dashboard</h1>
+          <h1 className="font-display text-3xl font-bold text-foreground">
+            {isAdmin ? "Admin Dashboard" : "Subscriber Dashboard"}
+          </h1>
           <span className="text-xs text-muted-foreground">{user.email}</span>
         </div>
 
@@ -82,8 +98,9 @@ const AdminPage = () => {
         {tab === "resin" && <AdminResinTypes />}
         {tab === "orders" && <AdminOrders />}
         {tab === "gallery" && <AdminGalleryImages />}
-        {tab === "users" && <AdminUsers />}
-        {tab === "settings" && <AdminSettings />}
+        {tab === "subscriptions" && isAdmin && <AdminSubscriptions />}
+        {tab === "users" && isAdmin && <AdminUsers />}
+        {tab === "settings" && isAdmin && <AdminSettings />}
       </div>
     </div>
   );
