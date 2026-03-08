@@ -12,7 +12,7 @@ type Tab = "styles" | "sizes" | "materials" | "orders" | "gallery" | "resin" | "
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
 const AdminPage = () => {
-  const { user, isAdmin, loading, signInWithGoogle } = useAuth();
+  const { user, isAdmin, isSubscriber, loading, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>("styles");
 
