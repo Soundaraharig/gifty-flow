@@ -1,4 +1,4 @@
-import { SIZES } from "@/lib/pricing";
+import { useSizes } from "@/hooks/useProductData";
 
 interface SizeStepProps {
   selected: string | null;
@@ -6,6 +6,10 @@ interface SizeStepProps {
 }
 
 const SizeStep = ({ selected, onSelect }: SizeStepProps) => {
+  const { data: sizes, isLoading } = useSizes();
+
+  if (isLoading) return <div className="text-center py-8 text-muted-foreground">Loading sizes...</div>;
+
   return (
     <div>
       <h2 className="font-display text-2xl font-bold text-foreground mb-2">
@@ -13,7 +17,7 @@ const SizeStep = ({ selected, onSelect }: SizeStepProps) => {
       </h2>
       <p className="text-muted-foreground mb-6">Choose the perfect size for your frame</p>
       <div className="grid grid-cols-3 gap-4">
-        {SIZES.map((size) => (
+        {sizes?.map((size) => (
           <button
             key={size.id}
             onClick={() => onSelect(size.id)}

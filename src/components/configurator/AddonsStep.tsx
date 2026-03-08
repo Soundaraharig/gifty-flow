@@ -1,4 +1,4 @@
-import { ADDONS } from "@/lib/pricing";
+import { useAddons } from "@/hooks/useProductData";
 
 interface AddonsStepProps {
   selected: string[];
@@ -6,14 +6,16 @@ interface AddonsStepProps {
 }
 
 const AddonsStep = ({ selected, onToggle }: AddonsStepProps) => {
+  const { data: addons, isLoading } = useAddons();
+
+  if (isLoading) return <div className="text-center py-8 text-muted-foreground">Loading...</div>;
+
   return (
     <div>
-      <h2 className="font-display text-2xl font-bold text-foreground mb-2">
-        Add-ons
-      </h2>
+      <h2 className="font-display text-2xl font-bold text-foreground mb-2">Add-ons</h2>
       <p className="text-muted-foreground mb-6">Enhance your order with extras</p>
       <div className="space-y-3">
-        {ADDONS.map((addon) => (
+        {addons?.map((addon) => (
           <button
             key={addon.id}
             onClick={() => onToggle(addon.id)}
