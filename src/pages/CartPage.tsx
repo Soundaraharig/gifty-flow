@@ -153,22 +153,6 @@ const CartPage = () => {
       const adminPhone = (settingRow as any)?.value || "919876543210";
       const waUrl = `https://wa.me/${adminPhone}?text=${encodeURIComponent(orderText)}`;
 
-      // Send email notification (fire and forget)
-      supabase.functions.invoke("send-order-email", {
-        body: {
-          type: paidViaUpi ? "upi_payment" : "new_order",
-          orderDetails: {
-            customerName: name.trim(),
-            customerPhone: phone.trim(),
-            address: address.trim() || null,
-            notes: notes.trim() || null,
-            total: totalPrice,
-            paymentMethod: paidViaUpi ? "upi" : "cod",
-            items: items.map(i => ({ name: i.name, quantity: i.quantity, price: i.price })),
-          },
-        },
-      }).catch(console.error);
-
       clearCart();
       window.location.href = waUrl;
     } catch (err: any) {
