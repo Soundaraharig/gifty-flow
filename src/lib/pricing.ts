@@ -3,6 +3,10 @@ export const EDITING_STYLES = [
   { id: "mosaic-collage", name: "Mosaic Collage", price: 60, description: "Beautiful mosaic pattern" },
   { id: "minimalist-retouch", name: "Minimalist Retouch", price: 50, description: "Clean, subtle editing" },
   { id: "digital-illustration", name: "Digital Illustration", price: 100, description: "Hand-drawn digital art" },
+  { id: "watercolor", name: "Watercolor", price: 90, description: "Soft flowing watercolor effect" },
+  { id: "pop-art", name: "Pop Art", price: 70, description: "Bold Warhol-style pop art" },
+  { id: "pencil-sketch", name: "Pencil Sketch", price: 55, description: "Detailed graphite sketch" },
+  { id: "vintage-retro", name: "Vintage Retro", price: 65, description: "Nostalgic retro film look" },
 ];
 
 export const SIZES = [

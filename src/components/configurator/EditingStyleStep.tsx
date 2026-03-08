@@ -3,12 +3,20 @@ import styleOilPainting from "@/assets/style-oil-painting.jpg";
 import styleMosaicCollage from "@/assets/style-mosaic-collage.jpg";
 import styleMinimalistRetouch from "@/assets/style-minimalist-retouch.jpg";
 import styleDigitalIllustration from "@/assets/style-digital-illustration.jpg";
+import styleWatercolor from "@/assets/style-watercolor.jpg";
+import stylePopArt from "@/assets/style-pop-art.jpg";
+import stylePencilSketch from "@/assets/style-pencil-sketch.jpg";
+import styleVintageRetro from "@/assets/style-vintage-retro.jpg";
 
 const STYLE_IMAGES: Record<string, string> = {
   "oil-painting": styleOilPainting,
   "mosaic-collage": styleMosaicCollage,
   "minimalist-retouch": styleMinimalistRetouch,
   "digital-illustration": styleDigitalIllustration,
+  "watercolor": styleWatercolor,
+  "pop-art": stylePopArt,
+  "pencil-sketch": stylePencilSketch,
+  "vintage-retro": styleVintageRetro,
 };
 
 interface EditingStyleStepProps {
