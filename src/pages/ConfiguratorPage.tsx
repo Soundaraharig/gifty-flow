@@ -120,7 +120,7 @@ const ConfiguratorPage = () => {
           ← Back to Home
         </button>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-[3fr_4fr] gap-8">
           {/* Left: Hero Image */}
           <div className="sticky top-24 self-start">
             <div className="aspect-square rounded-2xl overflow-hidden bg-muted border border-border">
