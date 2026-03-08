@@ -10,7 +10,7 @@ const ADMIN_WHATSAPP = "919999999999"; // Replace with actual admin number
 const CheckoutStep = ({ config }: CheckoutStepProps) => {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [imageFile, setImageFile] = useState<File | null>(null);
+  
 
   const total = calculateTotal(config);
   const style = EDITING_STYLES.find((s) => s.id === config.editingStyle);
@@ -70,25 +70,6 @@ const CheckoutStep = ({ config }: CheckoutStepProps) => {
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-1.5">Upload Your Photo</label>
-          <label className="flex flex-col items-center justify-center w-full h-32 rounded-xl border-2 border-dashed border-input bg-muted/50 cursor-pointer hover:border-primary/50 transition-colors">
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => setImageFile(e.target.files?.[0] || null)}
-            />
-            {imageFile ? (
-              <p className="text-sm text-foreground font-medium">{imageFile.name}</p>
-            ) : (
-              <>
-                <span className="text-2xl mb-1">📷</span>
-                <span className="text-sm text-muted-foreground">Click to upload your photo</span>
-              </>
-            )}
-          </label>
-        </div>
 
         {/* Order Summary */}
         <div className="mt-6 p-4 rounded-xl bg-muted/50 border border-border">
