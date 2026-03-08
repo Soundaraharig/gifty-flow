@@ -47,6 +47,36 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_addresses: {
+        Row: {
+          address: string | null
+          created_at: string
+          customer_name: string
+          customer_phone: string
+          id: string
+          is_default: boolean
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          customer_name: string
+          customer_phone: string
+          id?: string
+          is_default?: boolean
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          customer_name?: string
+          customer_phone?: string
+          id?: string
+          is_default?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
       editing_styles: {
         Row: {
           created_at: string
