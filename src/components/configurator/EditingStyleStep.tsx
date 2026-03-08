@@ -11,17 +11,30 @@ const EditingStyleStep = ({ selected, onSelect }: EditingStyleStepProps) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    console.log("[EditingStyleStep] fetching styles directly...");
-    supabase
-      .from("editing_styles")
-      .select("*")
-      .eq("is_active", true)
-      .order("sort_order")
-      .then(({ data, error }) => {
-        console.log("[EditingStyleStep] direct result:", { data, error });
-        if (!error) setStyles(data);
-        setIsLoading(false);
-      });
+    const url = import.meta.env.VITE_SUPABASE_URL;
+    const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    console.log("[EditingStyleStep] ENV:", { url, key: key?.substring(0, 20) });
+    
+    // Test raw fetch first
+    fetch(`${url}/rest/v1/editing_styles?is_active=eq.true&select=*&order=sort_order`, {
+      headers: {
+        'apikey': key,
+        'Authorization': `Bearer ${key}`,
+      }
+    })
+    .then(r => {
+      console.log("[EditingStyleStep] fetch status:", r.status);
+      return r.json();
+    })
+    .then(data => {
+      console.log("[EditingStyleStep] fetch data:", data?.length, "items");
+      setStyles(data);
+      setIsLoading(false);
+    })
+    .catch(e => {
+      console.error("[EditingStyleStep] fetch error:", e);
+      setIsLoading(false);
+    });
   }, []);
 
   if (isLoading) return <div className="text-center py-8 text-muted-foreground">Loading styles...</div>;
