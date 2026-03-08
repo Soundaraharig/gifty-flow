@@ -139,8 +139,31 @@ const ConfiguratorPage = () => {
                 </div>
               )}
             </div>
-            {/* Thumbnail strip */}
-            <div className="flex gap-2 mt-3 overflow-x-auto pb-1">
+            {/* Thumbnail strip - vertical scrollable like YouTube */}
+            <div className="hidden lg:flex flex-col gap-2 mt-3 max-h-[320px] overflow-y-auto pr-1 scrollbar-thin">
+              {styles?.map((style: any) => {
+                const img = style.image_url || FALLBACK_IMAGES[style.slug];
+                return (
+                  <button
+                    key={style.id}
+                    onClick={() => setConfig((p) => ({ ...p, editingStyleId: style.id }))}
+                    className={`flex items-center gap-3 shrink-0 rounded-lg overflow-hidden border-2 transition-all duration-200 text-left ${
+                      config.editingStyleId === style.id
+                        ? "border-primary ring-2 ring-primary/30 bg-primary/5"
+                        : "border-border hover:border-primary/40 bg-card"
+                    }`}
+                  >
+                    {img && <img src={img} alt={style.name} className="w-20 h-14 object-cover shrink-0" loading="lazy" />}
+                    <div className="pr-3 py-1.5 min-w-0">
+                      <p className="text-xs font-medium text-foreground truncate">{style.name}</p>
+                      <p className="text-[10px] text-muted-foreground truncate">{style.description}</p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            {/* Mobile: horizontal scroll */}
+            <div className="flex lg:hidden gap-2 mt-3 overflow-x-auto pb-1">
               {styles?.map((style: any) => {
                 const img = style.image_url || FALLBACK_IMAGES[style.slug];
                 return (
