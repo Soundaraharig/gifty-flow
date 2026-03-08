@@ -154,8 +154,7 @@ const StyleGalleryPage = () => {
               <div className="h-px bg-border" />
 
               <div>
-                <p className="text-sm text-muted-foreground mb-1">
-</p>
+                <p className="text-sm text-muted-foreground mb-1">EDITING CHARGE</p>
                 <p className="font-display text-3xl font-bold text-primary">₹{style?.price || 0}</p>
               </div>
 
