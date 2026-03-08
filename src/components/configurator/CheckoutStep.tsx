@@ -1,20 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-const headers = {
-  'apikey': SUPABASE_KEY,
-  'Authorization': `Bearer ${SUPABASE_KEY}`,
-};
-
-interface CheckoutConfig {
-  editingStyleId: string | null;
-  sizeId: string | null;
-  frameMaterialId: string | null;
-  frameColorId: string | null;
-  addonIds: string[];
-}
+import { fetchCheckoutSummary, type CheckoutConfig } from "@/lib/productQueries";
 
 interface CheckoutStepProps {
   config: CheckoutConfig;
@@ -28,42 +14,7 @@ const CheckoutStep = ({ config }: CheckoutStepProps) => {
 
   const { data: summary } = useQuery({
     queryKey: ["checkout_summary", config],
-    queryFn: async () => {
-      let total = 0;
-      let styleName = "N/A", sizeName = "N/A", materialName = "N/A", colorName = "N/A";
-      let stylePrice = 0, sizePrice = 0;
-
-      const fetchOne = async (table: string, id: string, fields: string) => {
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}&select=${fields}`, { headers });
-        const data = await res.json();
-        return data?.[0];
-      };
-
-      if (config.editingStyleId) {
-        const data = await fetchOne("editing_styles", config.editingStyleId, "name,price");
-        if (data) { styleName = data.name; stylePrice = data.price; total += data.price; }
-      }
-      if (config.sizeId) {
-        const data = await fetchOne("sizes", config.sizeId, "name,price");
-        if (data) { sizeName = data.name; sizePrice = data.price; total += data.price; }
-      }
-      if (config.frameMaterialId) {
-        const data = await fetchOne("frame_materials", config.frameMaterialId, "name,price");
-        if (data) { materialName = data.name; total += data.price; }
-      }
-      if (config.frameColorId) {
-        const data = await fetchOne("frame_colors", config.frameColorId, "name");
-        if (data) { colorName = data.name; }
-      }
-      if (config.addonIds.length > 0) {
-        const ids = config.addonIds.map(id => `"${id}"`).join(',');
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/addons?id=in.(${ids})&select=price`, { headers });
-        const data = await res.json();
-        if (data) total += data.reduce((acc: number, a: any) => acc + a.price, 0);
-      }
-
-      return { total, styleName, stylePrice, sizeName, sizePrice, materialName, colorName };
-    },
+    queryFn: () => fetchCheckoutSummary(config),
   });
 
   const handleOrder = () => {
