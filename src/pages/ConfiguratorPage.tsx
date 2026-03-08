@@ -105,10 +105,6 @@ const ConfiguratorPage = () => {
     setUserSelected(true);
     if (intervalRef.current) clearInterval(intervalRef.current);
     setConfig((p) => ({ ...p, editingStyleId: styleId }));
-    // Auto-scroll to size section
-    setTimeout(() => {
-      document.getElementById("size-section")?.scrollIntoView({ behavior: "smooth", block: "center" });
-    }, 200);
   }, []);
 
   // Determine which style to show in preview
@@ -234,15 +230,7 @@ const ConfiguratorPage = () => {
                   </button>
                 </>
               }
-              {/* View More button */}
-              {previewStyle && userSelected && (
-                <button
-                  onClick={() => navigate(`/style-gallery/${previewStyle.id}`)}
-                  className="absolute bottom-3 right-3 px-3 py-1.5 rounded-full bg-card/90 backdrop-blur-sm border border-border text-xs font-medium text-foreground hover:bg-card transition-colors flex items-center gap-1.5 shadow-sm"
-                >
-                  <span>🖼️</span> View More
-                </button>
-              )}
+              {/* View More button removed — now on thumbnails */}
               {/* Slideshow indicator dots */}
               {!userSelected && styles &&
               <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
@@ -263,17 +251,27 @@ const ConfiguratorPage = () => {
             <div className="lg:hidden flex gap-2 mt-3 overflow-x-auto pb-1">
               {styles?.map((style: any) => {
                 const img = style.image_url || FALLBACK_IMAGES[style.slug];
+                const isSelected = config.editingStyleId === style.id;
                 return (
-                  <button
-                    key={style.id}
-                    onClick={() => handleSelectStyle(style.id)}
-                    className={`shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all duration-200 ${
-                    config.editingStyleId === style.id ?
-                    "border-primary ring-2 ring-primary/30 scale-105" :
-                    "border-border hover:border-primary/40"}`
-                    }>
-                    {img && <img src={img} alt={style.name} className="w-full h-full object-cover" loading="lazy" />}
-                  </button>);
+                  <div key={style.id} className="relative shrink-0">
+                    <button
+                      onClick={() => handleSelectStyle(style.id)}
+                      className={`w-16 h-16 rounded-lg overflow-hidden border-2 transition-all duration-200 ${
+                      isSelected ?
+                      "border-primary ring-2 ring-primary/30 scale-105" :
+                      "border-border hover:border-primary/40"}`
+                      }>
+                      {img && <img src={img} alt={style.name} className="w-full h-full object-cover" loading="lazy" />}
+                    </button>
+                    {isSelected && userSelected && (
+                      <button
+                        onClick={() => navigate(`/style-gallery/${style.id}`)}
+                        className="absolute -bottom-1 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-card/90 backdrop-blur-sm border border-border text-[9px] font-medium text-foreground hover:bg-card transition-colors whitespace-nowrap shadow-sm z-10"
+                      >
+                        View More
+                      </button>
+                    )}
+                  </div>);
               })}
             </div>
           </div>
@@ -282,17 +280,27 @@ const ConfiguratorPage = () => {
           <div className="hidden lg:flex flex-col gap-2">
             {styles?.map((style: any) => {
               const img = style.image_url || FALLBACK_IMAGES[style.slug];
+              const isSelected = config.editingStyleId === style.id;
               return (
-                <button
-                  key={style.id}
-                  onClick={() => handleSelectStyle(style.id)}
-                  className={`w-[58px] h-[58px] rounded-md overflow-hidden border-2 transition-all duration-200 shrink-0 ${
-                  config.editingStyleId === style.id ?
-                  "border-primary ring-2 ring-primary/30" :
-                  "border-border hover:border-primary/40"}`
-                  }>
-                  {img && <img src={img} alt={style.name} className="w-full h-full object-cover" loading="lazy" />}
-                </button>);
+                <div key={style.id} className="relative">
+                  <button
+                    onClick={() => handleSelectStyle(style.id)}
+                    className={`w-[58px] h-[58px] rounded-md overflow-hidden border-2 transition-all duration-200 shrink-0 ${
+                    isSelected ?
+                    "border-primary ring-2 ring-primary/30" :
+                    "border-border hover:border-primary/40"}`
+                    }>
+                    {img && <img src={img} alt={style.name} className="w-full h-full object-cover" loading="lazy" />}
+                  </button>
+                  {isSelected && userSelected && (
+                    <button
+                      onClick={() => navigate(`/style-gallery/${style.id}`)}
+                      className="absolute -bottom-1 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-card/90 backdrop-blur-sm border border-border text-[9px] font-medium text-foreground hover:bg-card transition-colors whitespace-nowrap shadow-sm z-10"
+                    >
+                      View More
+                    </button>
+                  )}
+                </div>);
             })}
           </div>
 
