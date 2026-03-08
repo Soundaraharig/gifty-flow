@@ -13,6 +13,7 @@ const statusColors: Record<string, string> = {
 };
 
 const MyOrdersPage = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
 
   const { data: orders, isLoading } = useQuery({
