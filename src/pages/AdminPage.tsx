@@ -657,9 +657,16 @@ const AdminOrders = () => {
 };
 
 // --- Settings ---
+const SETTINGS_FIELDS = [
+  { key: "store_name", label: "Store Name", placeholder: "e.g. Zero GIF", hint: "Displayed in headers and order messages" },
+  { key: "admin_whatsapp", label: "Admin WhatsApp Number", placeholder: "e.g. 919876543210", hint: "International format without + sign" },
+  { key: "currency_symbol", label: "Currency Symbol", placeholder: "e.g. ₹ or $", hint: "Shown next to all prices" },
+  { key: "min_order_amount", label: "Minimum Order Amount", placeholder: "e.g. 500", hint: "Set to 0 for no minimum", type: "number" },
+];
+
 const AdminSettings = () => {
   const qc = useQueryClient();
-  const [whatsapp, setWhatsapp] = useState("");
+  const [values, setValues] = useState<Record<string, string>>({});
   const [loaded, setLoaded] = useState(false);
 
   const { data: settings, isLoading } = useQuery({
@@ -673,17 +680,23 @@ const AdminSettings = () => {
 
   useEffect(() => {
     if (settings && !loaded) {
-      const wa = settings.find((s) => s.key === "admin_whatsapp");
-      if (wa) setWhatsapp(wa.value);
+      const map: Record<string, string> = {};
+      settings.forEach((s) => { map[s.key] = s.value; });
+      setValues(map);
       setLoaded(true);
     }
   }, [settings, loaded]);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
+      const rows = SETTINGS_FIELDS.map((f) => ({
+        key: f.key,
+        value: (values[f.key] ?? "").trim(),
+        updated_at: new Date().toISOString(),
+      }));
       const { error } = await supabase
         .from("site_settings" as any)
-        .upsert({ key: "admin_whatsapp", value: whatsapp.trim(), updated_at: new Date().toISOString() } as any, { onConflict: "key" });
+        .upsert(rows as any, { onConflict: "key" });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -699,16 +712,19 @@ const AdminSettings = () => {
     <div>
       <h2 className="font-display text-xl font-bold text-foreground mb-4">Settings</h2>
       <div className="p-5 rounded-xl border border-border bg-card space-y-4 max-w-md">
-        <div>
-          <label className="text-xs text-muted-foreground mb-1 block">Admin WhatsApp Number</label>
-          <input
-            className="w-full px-3 py-2 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-            placeholder="e.g. 919876543210 (with country code, no +)"
-            value={whatsapp}
-            onChange={(e) => setWhatsapp(e.target.value)}
-          />
-          <p className="text-xs text-muted-foreground mt-1">International format without + sign. E.g. 919876543210 for India</p>
-        </div>
+        {SETTINGS_FIELDS.map((f) => (
+          <div key={f.key}>
+            <label className="text-xs text-muted-foreground mb-1 block">{f.label}</label>
+            <input
+              className="w-full px-3 py-2 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              placeholder={f.placeholder}
+              type={f.type || "text"}
+              value={values[f.key] ?? ""}
+              onChange={(e) => setValues((prev) => ({ ...prev, [f.key]: e.target.value }))}
+            />
+            <p className="text-xs text-muted-foreground mt-1">{f.hint}</p>
+          </div>
+        ))}
         <button
           onClick={() => saveMutation.mutate()}
           disabled={saveMutation.isPending}
