@@ -36,6 +36,7 @@ interface ConfigState {
   frameMaterialId: string | null;
   frameColorId: string | null;
   addonIds: string[];
+  selectedGalleryImage: string | null;
 }
 
 const ConfiguratorPage = () => {
@@ -45,12 +46,14 @@ const ConfiguratorPage = () => {
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
   const preSelectedStyle = searchParams.get("style");
+  const preSelectedImg = searchParams.get("img");
   const [config, setConfig] = useState<ConfigState>({
     editingStyleId: preSelectedStyle || null,
     sizeId: null,
     frameMaterialId: null,
     frameColorId: null,
-    addonIds: []
+    addonIds: [],
+    selectedGalleryImage: preSelectedImg ? decodeURIComponent(preSelectedImg) : null,
   });
   const [userSelected, setUserSelected] = useState(!!preSelectedStyle);
 
@@ -108,9 +111,12 @@ const ConfiguratorPage = () => {
   const previewStyle = userSelected ?
   styles?.find((s: any) => s.id === config.editingStyleId) :
   styles?.[slideshowIndex];
-  const heroImage = previewStyle ?
-  previewStyle.image_url || FALLBACK_IMAGES[previewStyle.slug] :
-  null;
+  // Use gallery-selected image if available, otherwise fall back to style image
+  const heroImage = config.selectedGalleryImage
+    ? config.selectedGalleryImage
+    : previewStyle
+      ? previewStyle.image_url || FALLBACK_IMAGES[previewStyle.slug]
+      : null;
 
   const { data: total = 0 } = useQuery({
     queryKey: ["price_total", config.editingStyleId, config.sizeId, config.frameMaterialId, config.addonIds],
