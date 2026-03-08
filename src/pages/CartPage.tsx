@@ -3,7 +3,7 @@ import Header from "@/components/Header";
 import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Minus, Plus, Trash2 } from "lucide-react";
 
@@ -19,8 +19,7 @@ const CartPage = () => {
   const [upiId, setUpiId] = useState("");
   const [showUpi, setShowUpi] = useState(false);
 
-  // Fetch UPI ID from settings
-  useState(() => {
+  useEffect(() => {
     supabase
       .from("site_settings" as any)
       .select("value")
@@ -29,7 +28,7 @@ const CartPage = () => {
       .then(({ data }) => {
         if ((data as any)?.value) setUpiId((data as any).value);
       });
-  });
+  }, []);
 
   const handlePlaceOrder = async () => {
     if (!name.trim() || !phone.trim() || placing || items.length === 0) return;
