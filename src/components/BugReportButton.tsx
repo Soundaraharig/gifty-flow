@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Bug, Send, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -9,7 +9,19 @@ const BugReportButton = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [sending, setSending] = useState(false);
+  const [adminPhone, setAdminPhone] = useState("919876543210");
   const { user } = useAuth();
+
+  useEffect(() => {
+    supabase
+      .from("site_settings" as any)
+      .select("value")
+      .eq("key", "admin_whatsapp")
+      .maybeSingle()
+      .then(({ data }) => {
+        if ((data as any)?.value) setAdminPhone((data as any).value);
+      });
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,9 +32,8 @@ const BugReportButton = () => {
 
     setSending(true);
     try {
-      // Send bug report via WhatsApp to admin
       const message = `🐛 *Bug Report*%0A%0A*Title:* ${encodeURIComponent(title.trim())}%0A*Description:* ${encodeURIComponent(description.trim())}%0A*User:* ${encodeURIComponent(user?.email || "Unknown")}%0A*Page:* ${encodeURIComponent(window.location.pathname)}`;
-      window.open(`https://wa.me/919876543210?text=${message}`, "_blank");
+      window.open(`https://wa.me/${adminPhone}?text=${message}`, "_blank");
       toast.success("Bug report sent!");
       setTitle("");
       setDescription("");
