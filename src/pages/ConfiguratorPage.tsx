@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import Header from "@/components/Header";
 import OrderSuccess from "@/components/configurator/OrderSuccess";
 import CheckoutStep from "@/components/configurator/CheckoutStep";
@@ -40,16 +40,19 @@ interface ConfigState {
 
 const ConfiguratorPage = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { addItem } = useCart();
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
+  const preSelectedStyle = searchParams.get("style");
   const [config, setConfig] = useState<ConfigState>({
-    editingStyleId: null,
+    editingStyleId: preSelectedStyle || null,
     sizeId: null,
     frameMaterialId: null,
     frameColorId: null,
     addonIds: []
   });
+  const [userSelected, setUserSelected] = useState(!!preSelectedStyle);
 
   const { data: styles, isLoading: loadingStyles } = useEditingStyles();
   const { data: sizes, isLoading: loadingSizes } = useSizes();
@@ -57,7 +60,6 @@ const ConfiguratorPage = () => {
 
   const selectedStyle = styles?.find((s: any) => s.id === config.editingStyleId);
 
-  const [userSelected, setUserSelected] = useState(false);
   const [slideshowIndex, setSlideshowIndex] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
