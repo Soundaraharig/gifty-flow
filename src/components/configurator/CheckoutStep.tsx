@@ -46,6 +46,8 @@ const CheckoutStep = ({ config, selectedGalleryImage, onOrderPlaced }: CheckoutS
       });
   }, []);
 
+  const [paidViaUpi, setPaidViaUpi] = useState(false);
+
   // Saved addresses
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [mode, setMode] = useState<"loading" | "select" | "new">("loading");
@@ -135,6 +137,7 @@ const CheckoutStep = ({ config, selectedGalleryImage, onOrderPlaced }: CheckoutS
           addon_ids: config.addonIds,
           total_price: summary?.total ?? 0,
           notes: [address.trim(), notes.trim()].filter(Boolean).join(" | ") || null,
+          payment_method: paidViaUpi ? "upi" : "cod",
         })
         .select("id")
         .single();
@@ -354,8 +357,17 @@ const CheckoutStep = ({ config, selectedGalleryImage, onOrderPlaced }: CheckoutS
                 >
                   📱 Open UPI App
                 </a>
-                <p className="text-xs text-muted-foreground">
-                  After payment, click "Place Order" below to confirm via WhatsApp.
+                <label className="flex items-center gap-2 mt-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={paidViaUpi}
+                    onChange={(e) => setPaidViaUpi(e.target.checked)}
+                    className="w-4 h-4 rounded border-border text-primary focus:ring-ring"
+                  />
+                  <span className="text-sm font-medium text-foreground">I have paid via UPI</span>
+                </label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Check this box after payment, then click "Place Order" to confirm.
                 </p>
               </div>
             )}

@@ -762,6 +762,29 @@ const AdminOrders = () => {
   return (
     <div>
       <h2 className="font-display text-xl font-bold text-foreground mb-4">Orders</h2>
+
+      {/* UPI Stats */}
+      {!isLoading && orders.length > 0 && (
+        <div className="grid grid-cols-3 gap-3 mb-6">
+          <div className="p-4 rounded-xl border border-border bg-card text-center">
+            <p className="text-2xl font-bold text-foreground">{orders.length}</p>
+            <p className="text-xs text-muted-foreground mt-1">Total Orders</p>
+          </div>
+          <div className="p-4 rounded-xl border border-primary/30 bg-primary/5 text-center">
+            <p className="text-2xl font-bold text-primary">
+              {orders.filter((o: any) => o.payment_method === "upi").length}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">Paid via UPI</p>
+          </div>
+          <div className="p-4 rounded-xl border border-border bg-card text-center">
+            <p className="text-2xl font-bold text-foreground">
+              ₹{orders.filter((o: any) => o.payment_method === "upi").reduce((s: number, o: any) => s + (o.total_price || 0), 0)}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">UPI Revenue</p>
+          </div>
+        </div>
+      )}
+
       {isLoading ? (
         <p className="text-muted-foreground text-sm">Loading orders...</p>
       ) : orders.length === 0 ? (
@@ -777,6 +800,11 @@ const AdminOrders = () => {
                 </div>
                 <div className="text-right">
                   <p className="font-semibold text-primary">₹{order.total_price}</p>
+                  {order.payment_method === "upi" && (
+                    <span className="inline-block text-[10px] bg-primary/10 text-primary font-semibold px-2 py-0.5 rounded-full mt-0.5">
+                      💳 UPI
+                    </span>
+                  )}
                   <select
                     value={order.status}
                     onChange={(e) => updateStatus.mutate({ id: order.id, status: e.target.value })}

@@ -193,6 +193,7 @@ export type Database = {
           frame_material_id: string | null
           id: string
           notes: string | null
+          payment_method: string | null
           size_id: string | null
           status: string
           total_price: number
@@ -209,6 +210,7 @@ export type Database = {
           frame_material_id?: string | null
           id?: string
           notes?: string | null
+          payment_method?: string | null
           size_id?: string | null
           status?: string
           total_price?: number
@@ -225,6 +227,7 @@ export type Database = {
           frame_material_id?: string | null
           id?: string
           notes?: string | null
+          payment_method?: string | null
           size_id?: string | null
           status?: string
           total_price?: number
