@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -635,6 +635,71 @@ const AdminOrders = () => {
           ))}
         </div>
       )}
+    </div>
+  );
+};
+
+// --- Settings ---
+const AdminSettings = () => {
+  const qc = useQueryClient();
+  const [whatsapp, setWhatsapp] = useState("");
+  const [loaded, setLoaded] = useState(false);
+
+  const { data: settings, isLoading } = useQuery({
+    queryKey: ["site_settings"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("site_settings" as any).select("*");
+      if (error) throw error;
+      return data as { key: string; value: string }[];
+    },
+  });
+
+  useEffect(() => {
+    if (settings && !loaded) {
+      const wa = settings.find((s) => s.key === "admin_whatsapp");
+      if (wa) setWhatsapp(wa.value);
+      setLoaded(true);
+    }
+  }, [settings, loaded]);
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from("site_settings" as any)
+        .upsert({ key: "admin_whatsapp", value: whatsapp.trim(), updated_at: new Date().toISOString() } as any, { onConflict: "key" });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["site_settings"] });
+      alert("Settings saved!");
+    },
+    onError: (err: any) => alert("Save failed: " + err.message),
+  });
+
+  if (isLoading) return <p className="text-muted-foreground text-sm">Loading...</p>;
+
+  return (
+    <div>
+      <h2 className="font-display text-xl font-bold text-foreground mb-4">Settings</h2>
+      <div className="p-5 rounded-xl border border-border bg-card space-y-4 max-w-md">
+        <div>
+          <label className="text-xs text-muted-foreground mb-1 block">Admin WhatsApp Number</label>
+          <input
+            className="w-full px-3 py-2 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            placeholder="e.g. 919876543210 (with country code, no +)"
+            value={whatsapp}
+            onChange={(e) => setWhatsapp(e.target.value)}
+          />
+          <p className="text-xs text-muted-foreground mt-1">International format without + sign. E.g. 919876543210 for India</p>
+        </div>
+        <button
+          onClick={() => saveMutation.mutate()}
+          disabled={saveMutation.isPending}
+          className="px-5 py-2 rounded-full bg-primary text-primary-foreground text-sm font-medium disabled:opacity-50"
+        >
+          {saveMutation.isPending ? "Saving..." : "Save Settings"}
+        </button>
+      </div>
     </div>
   );
 };

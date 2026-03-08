@@ -134,7 +134,13 @@ const CheckoutStep = ({ config, onOrderPlaced }: CheckoutStepProps) => {
         `💰 Total: ₹${summary?.total ?? 0}`,
       ].filter(Boolean).join("\n");
 
-      const adminPhone = "919876543210"; // Replace with your WhatsApp number
+      // Fetch admin WhatsApp number from settings
+      const { data: settingRow } = await supabase
+        .from("site_settings" as any)
+        .select("value")
+        .eq("key", "admin_whatsapp")
+        .maybeSingle();
+      const adminPhone = (settingRow as any)?.value || "919876543210";
       const waUrl = `https://wa.me/${adminPhone}?text=${encodeURIComponent(orderText)}`;
       window.open(waUrl, "_blank");
 
