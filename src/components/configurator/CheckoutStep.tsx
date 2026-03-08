@@ -25,6 +25,7 @@ interface SavedAddress {
 const CheckoutStep = ({ config, selectedGalleryImage, onOrderPlaced }: CheckoutStepProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { addItem } = useCart();
   const [name, setName] = useState(user?.user_metadata?.full_name || "");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
