@@ -289,7 +289,7 @@ const CheckoutStep = ({ config, onOrderPlaced }: CheckoutStepProps) => {
             )}
             <div className="flex justify-between">
               <span className="text-muted-foreground">🚚 Shipping</span>
-              <span className="text-foreground text-green-600 dark:text-green-400">Free</span>
+              <span className="text-primary font-medium">Free</span>
             </div>
             <div className="border-t border-border my-2" />
             <div className="flex justify-between font-semibold text-base">
