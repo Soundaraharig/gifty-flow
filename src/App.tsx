@@ -8,6 +8,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import AuthPage from "./pages/AuthPage";
 import Index from "./pages/Index";
 import ConfiguratorPage from "./pages/ConfiguratorPage";
+import MyOrdersPage from "./pages/MyOrdersPage";
 import AdminPage from "./pages/AdminPage";
 import NotFound from "./pages/NotFound";
 
@@ -24,6 +25,7 @@ const App = () => (
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/configure/:categoryId" element={<ProtectedRoute><ConfiguratorPage /></ProtectedRoute>} />
+            <Route path="/my-orders" element={<ProtectedRoute><MyOrdersPage /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
