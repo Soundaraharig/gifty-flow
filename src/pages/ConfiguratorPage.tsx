@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import OrderSuccess from "@/components/configurator/OrderSuccess";
 import CheckoutStep from "@/components/configurator/CheckoutStep";
-import StyleGalleryModal from "@/components/configurator/StyleGalleryModal";
+// StyleGalleryModal removed — now uses /style-gallery/:styleId route
 import { useEditingStyles, useSizes, useFrameMaterials } from "@/hooks/useProductData";
 import { useQuery } from "@tanstack/react-query";
 import { fetchCheckoutTotal } from "@/lib/productQueries";
