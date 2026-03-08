@@ -193,7 +193,7 @@ const ConfiguratorPage = () => {
 
           {/* Big Preview */}
           <div>
-            <div className="relative aspect-square rounded-xl overflow-hidden bg-muted border border-border group">
+            <div className="relative aspect-square rounded-xl overflow-hidden bg-muted border border-border max-w-[480px] group">
               {heroImage ?
               <img
                 key={previewStyle?.id || "empty"}
