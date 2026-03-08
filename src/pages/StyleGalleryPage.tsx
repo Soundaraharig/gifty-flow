@@ -222,6 +222,7 @@ const StyleGalleryPage = () => {
                   ⚡ Buy Now
                 </button>
               </div>
+            </div>
           </div>
         )}
 
