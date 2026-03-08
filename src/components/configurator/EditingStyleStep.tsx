@@ -24,7 +24,7 @@ const EditingStyleStep = ({ selected, onSelect }: EditingStyleStepProps) => {
       });
   }, []);
 
-  return (
+  if (isLoading) return <div className="text-center py-8 text-muted-foreground">Loading styles...</div>;
     <div>
       <h2 className="font-display text-2xl font-bold text-foreground mb-2">
         Choose Editing Style
