@@ -193,22 +193,9 @@ const ConfiguratorPage = () => {
               {selectedStyle?.description &&
               <p className="text-muted-foreground mt-2">{selectedStyle.description}</p>
               }
-              <div className="flex items-baseline gap-3 mt-4">
-                <span className="font-display text-3xl font-bold text-primary">₹{total}</span>
-                {total > 0 &&
-                <span className="text-sm text-muted-foreground line-through">
-                    ₹{Math.round(total * 1.25)}
-                  </span>
-                }
-                {total > 0 &&
-                <span className="text-xs font-semibold text-green-600 bg-green-100 px-2 py-0.5 rounded-full">
-                    20% OFF
-                  </span>
-                }
-              </div>
-              <div className="flex items-center gap-2 mt-2">
-                <div className="flex text-amber-400 text-sm">★★★★★</div>
-                <span className="text-xs text-muted-foreground">4.8 (120+ orders)</span>
+              <div className="flex items-center gap-2 mt-3">
+                <span className="text-sm">❤️</span>
+                <span className="text-sm text-muted-foreground font-medium">120+ people loved this style</span>
               </div>
             </div>
 
