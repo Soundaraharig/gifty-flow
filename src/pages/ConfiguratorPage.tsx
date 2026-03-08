@@ -301,7 +301,7 @@ const ConfiguratorPage = () => {
             <div className="h-px bg-border" />
 
             {/* Size Selection */}
-            <div>
+            <div id="size-section">
               <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider mb-3">
                 Size
               </h3>
@@ -401,6 +401,20 @@ const ConfiguratorPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Style Gallery Modal */}
+      {showGallery && previewStyle && (
+        <StyleGalleryModal
+          styleId={previewStyle.id}
+          styleName={previewStyle.name}
+          onClose={() => setShowGallery(false)}
+          onSelectAndBuy={() => {
+            setShowGallery(false);
+            // Scroll to size selection
+            document.getElementById("size-section")?.scrollIntoView({ behavior: "smooth" });
+          }}
+        />
+      )}
 
       {/* Sticky Buy Bar */}
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-lg border-t border-border shadow-[0_-4px_30px_rgba(0,0,0,0.08)]">
