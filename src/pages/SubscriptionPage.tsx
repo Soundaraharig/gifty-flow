@@ -107,7 +107,9 @@ const SubscriptionPage = () => {
     window.location.href = `upi://pay?pa=${upiId}&pn=ZeroGifts&am=49&cu=INR&tn=VIP+Subscription`;
   };
 
-  if (userRole === "subscriber") {
+  const isApprovedOrSubscriber = userRole === "subscriber" || existingRequest?.status === "approved";
+
+  if (isApprovedOrSubscriber) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
