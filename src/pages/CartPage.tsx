@@ -26,6 +26,7 @@ const CartPage = () => {
   const [notes, setNotes] = useState("");
   const [upiId, setUpiId] = useState("");
   const [showUpi, setShowUpi] = useState(false);
+  const [paidViaUpi, setPaidViaUpi] = useState(false);
 
   // Address mode
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
@@ -120,12 +121,13 @@ const CartPage = () => {
           size_id: item.sizeId || null,
           frame_material_id: item.frameMaterialId || null,
           total_price: item.price * item.quantity,
+          payment_method: paidViaUpi ? "upi" : "cod",
           notes: [
             item.type === "resin" ? `Resin: ${item.name} x${item.quantity}` : null,
             address.trim(),
             notes.trim(),
           ].filter(Boolean).join(" | ") || null,
-        });
+        } as any);
       }
 
       // WhatsApp message

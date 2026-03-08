@@ -46,6 +46,8 @@ const CheckoutStep = ({ config, selectedGalleryImage, onOrderPlaced }: CheckoutS
       });
   }, []);
 
+  const [paidViaUpi, setPaidViaUpi] = useState(false);
+
   // Saved addresses
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [mode, setMode] = useState<"loading" | "select" | "new">("loading");
@@ -135,6 +137,7 @@ const CheckoutStep = ({ config, selectedGalleryImage, onOrderPlaced }: CheckoutS
           addon_ids: config.addonIds,
           total_price: summary?.total ?? 0,
           notes: [address.trim(), notes.trim()].filter(Boolean).join(" | ") || null,
+          payment_method: paidViaUpi ? "upi" : "cod",
         })
         .select("id")
         .single();
