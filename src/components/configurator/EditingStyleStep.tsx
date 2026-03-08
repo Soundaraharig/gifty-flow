@@ -1,23 +1,4 @@
-import { EDITING_STYLES } from "@/lib/pricing";
-import styleOilPainting from "@/assets/style-oil-painting.jpg";
-import styleMosaicCollage from "@/assets/style-mosaic-collage.jpg";
-import styleMinimalistRetouch from "@/assets/style-minimalist-retouch.jpg";
-import styleDigitalIllustration from "@/assets/style-digital-illustration.jpg";
-import styleWatercolor from "@/assets/style-watercolor.jpg";
-import stylePopArt from "@/assets/style-pop-art.jpg";
-import stylePencilSketch from "@/assets/style-pencil-sketch.jpg";
-import styleVintageRetro from "@/assets/style-vintage-retro.jpg";
-
-const STYLE_IMAGES: Record<string, string> = {
-  "oil-painting": styleOilPainting,
-  "mosaic-collage": styleMosaicCollage,
-  "minimalist-retouch": styleMinimalistRetouch,
-  "digital-illustration": styleDigitalIllustration,
-  "watercolor": styleWatercolor,
-  "pop-art": stylePopArt,
-  "pencil-sketch": stylePencilSketch,
-  "vintage-retro": styleVintageRetro,
-};
+import { useEditingStyles } from "@/hooks/useProductData";
 
 interface EditingStyleStepProps {
   selected: string | null;
@@ -25,6 +6,10 @@ interface EditingStyleStepProps {
 }
 
 const EditingStyleStep = ({ selected, onSelect }: EditingStyleStepProps) => {
+  const { data: styles, isLoading } = useEditingStyles();
+
+  if (isLoading) return <div className="text-center py-8 text-muted-foreground">Loading styles...</div>;
+
   return (
     <div>
       <h2 className="font-display text-2xl font-bold text-foreground mb-2">
@@ -32,7 +17,7 @@ const EditingStyleStep = ({ selected, onSelect }: EditingStyleStepProps) => {
       </h2>
       <p className="text-muted-foreground mb-6">Select how your photo will be artistically transformed</p>
       <div className="grid grid-cols-2 gap-4">
-        {EDITING_STYLES.map((style) => (
+        {styles?.map((style) => (
           <button
             key={style.id}
             onClick={() => onSelect(style.id)}
@@ -42,12 +27,14 @@ const EditingStyleStep = ({ selected, onSelect }: EditingStyleStepProps) => {
                 : "border-border bg-card hover:border-primary/40"
             }`}
           >
-            <img
-              src={STYLE_IMAGES[style.id]}
-              alt={style.name}
-              className="w-full h-28 object-cover"
-              loading="lazy"
-            />
+            {style.image_url && (
+              <img
+                src={style.image_url}
+                alt={style.name}
+                className="w-full h-28 object-cover"
+                loading="lazy"
+              />
+            )}
             <div className="p-3">
               <h3 className="font-semibold text-foreground mb-1">{style.name}</h3>
               <p className="text-xs text-muted-foreground mb-2">{style.description}</p>

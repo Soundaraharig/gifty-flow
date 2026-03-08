@@ -8,27 +8,34 @@ import FrameStep from "@/components/configurator/FrameStep";
 import AddonsStep from "@/components/configurator/AddonsStep";
 import CheckoutStep from "@/components/configurator/CheckoutStep";
 import PriceBar from "@/components/configurator/PriceBar";
-import type { OrderConfig } from "@/lib/pricing";
 
 const STEP_LABELS = ["Style", "Size", "Frame", "Add-ons", "Checkout"];
+
+interface ConfigState {
+  editingStyleId: string | null;
+  sizeId: string | null;
+  frameMaterialId: string | null;
+  frameColorId: string | null;
+  addonIds: string[];
+}
 
 const ConfiguratorPage = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
-  const [config, setConfig] = useState<OrderConfig>({
-    editingStyle: null,
-    size: null,
-    frameMaterial: null,
-    frameColor: null,
-    addons: [],
+  const [config, setConfig] = useState<ConfigState>({
+    editingStyleId: null,
+    sizeId: null,
+    frameMaterialId: null,
+    frameColorId: null,
+    addonIds: [],
   });
 
   const canProceed = () => {
     switch (step) {
-      case 0: return config.editingStyle !== null;
-      case 1: return config.size !== null;
-      case 2: return config.frameMaterial !== null && config.frameColor !== null;
-      case 3: return true; // addons are optional
+      case 0: return config.editingStyleId !== null;
+      case 1: return config.sizeId !== null;
+      case 2: return config.frameMaterialId !== null && config.frameColorId !== null;
+      case 3: return true;
       default: return false;
     }
   };
@@ -36,9 +43,9 @@ const ConfiguratorPage = () => {
   const toggleAddon = (id: string) => {
     setConfig((prev) => ({
       ...prev,
-      addons: prev.addons.includes(id)
-        ? prev.addons.filter((a) => a !== id)
-        : [...prev.addons, id],
+      addonIds: prev.addonIds.includes(id)
+        ? prev.addonIds.filter((a) => a !== id)
+        : [...prev.addonIds, id],
     }));
   };
 
@@ -58,26 +65,26 @@ const ConfiguratorPage = () => {
         <div className="mb-8">
           {step === 0 && (
             <EditingStyleStep
-              selected={config.editingStyle}
-              onSelect={(id) => setConfig((p) => ({ ...p, editingStyle: id }))}
+              selected={config.editingStyleId}
+              onSelect={(id) => setConfig((p) => ({ ...p, editingStyleId: id }))}
             />
           )}
           {step === 1 && (
             <SizeStep
-              selected={config.size}
-              onSelect={(id) => setConfig((p) => ({ ...p, size: id }))}
+              selected={config.sizeId}
+              onSelect={(id) => setConfig((p) => ({ ...p, sizeId: id }))}
             />
           )}
           {step === 2 && (
             <FrameStep
-              selectedMaterial={config.frameMaterial}
-              selectedColor={config.frameColor}
-              onSelectMaterial={(id) => setConfig((p) => ({ ...p, frameMaterial: id }))}
-              onSelectColor={(id) => setConfig((p) => ({ ...p, frameColor: id }))}
+              selectedMaterial={config.frameMaterialId}
+              selectedColor={config.frameColorId}
+              onSelectMaterial={(id) => setConfig((p) => ({ ...p, frameMaterialId: id }))}
+              onSelectColor={(id) => setConfig((p) => ({ ...p, frameColorId: id }))}
             />
           )}
           {step === 3 && (
-            <AddonsStep selected={config.addons} onToggle={toggleAddon} />
+            <AddonsStep selected={config.addonIds} onToggle={toggleAddon} />
           )}
           {step === 4 && <CheckoutStep config={config} />}
         </div>
@@ -85,7 +92,10 @@ const ConfiguratorPage = () => {
 
       {step < 4 && (
         <PriceBar
-          config={config}
+          selectedStyleId={config.editingStyleId}
+          selectedSizeId={config.sizeId}
+          selectedMaterialId={config.frameMaterialId}
+          selectedAddonIds={config.addonIds}
           currentStep={step}
           totalSteps={5}
           canProceed={canProceed()}
