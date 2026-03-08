@@ -196,15 +196,27 @@ const ConfiguratorPage = () => {
             <div className="relative aspect-square rounded-xl overflow-hidden bg-muted border border-border max-w-[480px] group">
               {heroImage ? (
                 <img
+                  key={previewStyle?.id || "empty"}
                   src={heroImage}
                   alt={previewStyle?.name || "Select a style"}
-                  className="w-full h-full object-cover transition-all duration-500"
+                  className="w-full h-full object-cover animate-fade-in"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                   <div className="text-center">
                     <div className="text-5xl mb-3">🎨</div>
                     <p className="font-medium">Select a style to preview</p>
+                  </div>
+                </div>
+              )}
+              {/* Style name overlay during slideshow */}
+              {previewStyle && !userSelected && (
+                <div className="absolute bottom-10 left-0 right-0 px-4 animate-fade-in">
+                  <div className="bg-foreground/60 backdrop-blur-md rounded-lg px-4 py-2.5 text-center">
+                    <p className="font-display text-sm font-semibold text-primary-foreground">{previewStyle.name}</p>
+                    {previewStyle.description && (
+                      <p className="text-[11px] text-primary-foreground/70 mt-0.5 line-clamp-1">{previewStyle.description}</p>
+                    )}
                   </div>
                 </div>
               )}
@@ -249,7 +261,7 @@ const ConfiguratorPage = () => {
                 </div>
               )}
             </div>
-            {previewStyle && (
+            {previewStyle && userSelected && (
               <p className="text-xs text-muted-foreground mt-2 text-center">{previewStyle.name}</p>
             )}
             {/* Mobile: horizontal thumbnails */}
