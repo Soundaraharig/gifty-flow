@@ -17,7 +17,7 @@ const categories = [
     title: "Resin Art",
     description: "Beautiful handcrafted resin artwork",
     image: resinArtImg,
-    available: false,
+    available: true,
   },
   {
     id: "custom-gifts",
