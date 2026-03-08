@@ -53,6 +53,7 @@ const ConfiguratorPage = () => {
 
   const selectedStyle = styles?.find((s: any) => s.id === config.editingStyleId);
 
+  const [userSelected, setUserSelected] = useState(false);
   const [slideshowIndex, setSlideshowIndex] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
