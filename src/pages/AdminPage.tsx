@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,16 +7,32 @@ import Header from "@/components/Header";
 
 type Tab = "styles" | "sizes" | "materials" | "colors" | "addons" | "orders";
 
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+
 const AdminPage = () => {
-  const { isAdmin, loading } = useAuth();
+  const { user, isAdmin, loading, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>("styles");
 
   if (loading) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading...</div>;
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-background">
+        <h1 className="font-display text-2xl font-bold text-foreground">Admin Login</h1>
+        <p className="text-muted-foreground">Sign in with your Google account to access the dashboard.</p>
+        <button onClick={signInWithGoogle} className="px-6 py-3 rounded-full bg-primary text-primary-foreground font-medium shadow-rose hover:opacity-90 transition-opacity">
+          Sign in with Google
+        </button>
+      </div>
+    );
+  }
+
   if (!isAdmin) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-background">
         <p className="text-destructive font-semibold">Access denied. Admins only.</p>
+        <p className="text-sm text-muted-foreground">Signed in as {user.email}</p>
         <button onClick={() => navigate("/")} className="text-primary underline">Go Home</button>
       </div>
     );
@@ -34,8 +50,11 @@ const AdminPage = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <div className="container mx-auto px-4 pt-24 max-w-4xl">
-        <h1 className="font-display text-3xl font-bold text-foreground mb-6">Admin Dashboard</h1>
+      <div className="container mx-auto px-4 pt-24 pb-12 max-w-4xl">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="font-display text-3xl font-bold text-foreground">Admin Dashboard</h1>
+          <span className="text-xs text-muted-foreground">{user.email}</span>
+        </div>
 
         <div className="flex flex-wrap gap-2 mb-8">
           {tabs.map((t) => (
@@ -64,7 +83,62 @@ const AdminPage = () => {
   );
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// --- Image Upload Helper ---
+function ImageUploadField({ value, onChange, folder }: { value: string; onChange: (url: string) => void; folder: string }) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `${folder}/${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("product-images").upload(path, file, { upsert: true });
+      if (error) throw error;
+      const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/product-images/${path}`;
+      onChange(publicUrl);
+    } catch (err: any) {
+      alert("Upload failed: " + err.message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      {value && (
+        <img src={value} alt="Preview" className="w-24 h-16 object-cover rounded-lg border border-border" />
+      )}
+      <div className="flex gap-2 items-center">
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleUpload}
+        />
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          disabled={uploading}
+          className="px-3 py-1.5 rounded-lg border border-border text-xs font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+        >
+          {uploading ? "Uploading..." : value ? "Replace Image" : "Upload Image"}
+        </button>
+        <input
+          className={inputClass}
+          placeholder="Or paste image URL"
+          value={value || ""}
+          onChange={(e) => onChange(e.target.value)}
+        />
+      </div>
+    </div>
+  );
+}
+
+// --- Generic CRUD Table ---
 function AdminCrudTable({
   tableName,
   queryKey,
@@ -74,7 +148,7 @@ function AdminCrudTable({
 }: {
   tableName: string;
   queryKey: string;
-  columns: { key: string; label: string }[];
+  columns: { key: string; label: string; render?: (val: any, row: any) => React.ReactNode }[];
   renderForm: (values: Record<string, any>, onChange: (k: string, v: any) => void) => React.ReactNode;
   defaultValues: Record<string, any>;
 }) {
@@ -82,7 +156,7 @@ function AdminCrudTable({
   const [editing, setEditing] = useState<Record<string, any> | null>(null);
   const [isNew, setIsNew] = useState(false);
 
-  const { data: rows = [] } = useQuery({
+  const { data: rows = [], isLoading } = useQuery({
     queryKey: [queryKey],
     queryFn: async () => {
       const { data, error } = await supabase.from(tableName as any).select("*").order("sort_order");
@@ -94,15 +168,17 @@ function AdminCrudTable({
   const saveMutation = useMutation({
     mutationFn: async (values: Record<string, any>) => {
       if (isNew) {
-        const { error } = await supabase.from(tableName as any).insert(values as any);
+        const { id, created_at, updated_at, ...rest } = values;
+        const { error } = await supabase.from(tableName as any).insert(rest as any);
         if (error) throw error;
       } else {
-        const { id, ...rest } = values;
+        const { id, created_at, updated_at, ...rest } = values;
         const { error } = await supabase.from(tableName as any).update(rest as any).eq("id", id as any);
         if (error) throw error;
       }
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: [queryKey] }); setEditing(null); setIsNew(false); },
+    onError: (err: any) => alert("Save failed: " + err.message),
   });
 
   const deleteMutation = useMutation({
@@ -111,14 +187,15 @@ function AdminCrudTable({
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: [queryKey] }),
+    onError: (err: any) => alert("Delete failed: " + err.message),
   });
 
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
-        <h2 className="font-display text-xl font-bold text-foreground capitalize">{queryKey.replace("_", " ")}</h2>
+        <h2 className="font-display text-xl font-bold text-foreground capitalize">{queryKey.replace(/admin_/g, "").replace(/_/g, " ")}</h2>
         <button
-          onClick={() => { setEditing(defaultValues); setIsNew(true); }}
+          onClick={() => { setEditing({ ...defaultValues }); setIsNew(true); }}
           className="px-4 py-2 rounded-full bg-primary text-primary-foreground text-sm font-medium"
         >
           + Add New
@@ -126,73 +203,104 @@ function AdminCrudTable({
       </div>
 
       {editing && (
-        <div className="mb-6 p-4 rounded-xl border border-border bg-card space-y-3">
+        <div className="mb-6 p-5 rounded-xl border border-border bg-card space-y-4">
+          <h3 className="font-semibold text-foreground text-sm">{isNew ? "Add New Item" : "Edit Item"}</h3>
           {renderForm(editing, (k, v) => setEditing((prev) => prev ? { ...prev, [k]: v } : prev))}
-          <div className="flex gap-2">
-            <button onClick={() => saveMutation.mutate(editing)} className="px-4 py-2 rounded-full bg-primary text-primary-foreground text-sm font-medium">
+          <div className="flex gap-2 pt-2">
+            <button onClick={() => saveMutation.mutate(editing)} disabled={saveMutation.isPending} className="px-5 py-2 rounded-full bg-primary text-primary-foreground text-sm font-medium disabled:opacity-50">
               {saveMutation.isPending ? "Saving..." : "Save"}
             </button>
-            <button onClick={() => { setEditing(null); setIsNew(false); }} className="px-4 py-2 rounded-full border border-border text-sm font-medium text-foreground">
+            <button onClick={() => { setEditing(null); setIsNew(false); }} className="px-5 py-2 rounded-full border border-border text-sm font-medium text-foreground">
               Cancel
             </button>
           </div>
         </div>
       )}
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border">
-              {columns.map((c) => (
-                <th key={String(c.key)} className="text-left py-2 px-3 text-muted-foreground font-medium">{c.label}</th>
-              ))}
-              <th className="text-right py-2 px-3 text-muted-foreground font-medium">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr key={row.id} className="border-b border-border/50 hover:bg-muted/30">
+      {isLoading ? (
+        <p className="text-muted-foreground text-sm">Loading...</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border">
                 {columns.map((c) => (
-                  <td key={String(c.key)} className="py-2 px-3 text-foreground">{String((row as any)[c.key] ?? "")}</td>
+                  <th key={c.key} className="text-left py-2 px-3 text-muted-foreground font-medium">{c.label}</th>
                 ))}
-                <td className="py-2 px-3 text-right space-x-2">
-                  <button onClick={() => { setEditing(row); setIsNew(false); }} className="text-primary text-xs hover:underline">Edit</button>
-                  <button onClick={() => { if (confirm("Delete?")) deleteMutation.mutate(row.id); }} className="text-destructive text-xs hover:underline">Delete</button>
-                </td>
+                <th className="text-right py-2 px-3 text-muted-foreground font-medium">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr key={row.id} className="border-b border-border/50 hover:bg-muted/30">
+                  {columns.map((c) => (
+                    <td key={c.key} className="py-2 px-3 text-foreground">
+                      {c.render ? c.render(row[c.key], row) : String(row[c.key] ?? "")}
+                    </td>
+                  ))}
+                  <td className="py-2 px-3 text-right space-x-2">
+                    <button onClick={() => { setEditing({ ...row }); setIsNew(false); }} className="text-primary text-xs hover:underline">Edit</button>
+                    <button onClick={() => { if (confirm("Delete this item?")) deleteMutation.mutate(row.id); }} className="text-destructive text-xs hover:underline">Delete</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {rows.length === 0 && <p className="text-center text-muted-foreground text-sm py-4">No items yet.</p>}
+        </div>
+      )}
     </div>
   );
 }
 
 const inputClass = "w-full px-3 py-2 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring";
 
+// --- Editing Styles (with image upload) ---
 const AdminEditingStyles = () => (
   <AdminCrudTable
     tableName="editing_styles"
     queryKey="admin_editing_styles"
     columns={[
+      {
+        key: "image_url", label: "Image",
+        render: (val: string) => val ? <img src={val} alt="" className="w-12 h-8 object-cover rounded" /> : <span className="text-muted-foreground text-xs">No image</span>
+      },
       { key: "name", label: "Name" },
       { key: "slug", label: "Slug" },
       { key: "price", label: "Price (₹)" },
-      { key: "is_active", label: "Active" },
+      { key: "is_active", label: "Active", render: (val: boolean) => val ? "✅" : "❌" },
       { key: "sort_order", label: "Order" },
     ]}
     defaultValues={{ slug: "", name: "", description: "", price: 0, image_url: "", sort_order: 0, is_active: true }}
     renderForm={(v, set) => (
       <>
         <div className="grid grid-cols-2 gap-3">
-          <input className={inputClass} placeholder="Name" value={v.name || ""} onChange={(e) => set("name", e.target.value)} />
-          <input className={inputClass} placeholder="Slug" value={v.slug || ""} onChange={(e) => set("slug", e.target.value)} />
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Name</label>
+            <input className={inputClass} placeholder="Name" value={v.name || ""} onChange={(e) => set("name", e.target.value)} />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Slug</label>
+            <input className={inputClass} placeholder="Slug (e.g. oil-painting)" value={v.slug || ""} onChange={(e) => set("slug", e.target.value)} />
+          </div>
         </div>
-        <input className={inputClass} placeholder="Description" value={v.description || ""} onChange={(e) => set("description", e.target.value)} />
-        <div className="grid grid-cols-3 gap-3">
-          <input className={inputClass} type="number" placeholder="Price" value={v.price || 0} onChange={(e) => set("price", +e.target.value)} />
-          <input className={inputClass} type="number" placeholder="Sort Order" value={v.sort_order || 0} onChange={(e) => set("sort_order", +e.target.value)} />
-          <input className={inputClass} placeholder="Image URL" value={v.image_url || ""} onChange={(e) => set("image_url", e.target.value)} />
+        <div>
+          <label className="text-xs text-muted-foreground mb-1 block">Description</label>
+          <input className={inputClass} placeholder="Short description" value={v.description || ""} onChange={(e) => set("description", e.target.value)} />
+        </div>
+        <div>
+          <label className="text-xs text-muted-foreground mb-1 block">Style Image</label>
+          <ImageUploadField value={v.image_url || ""} onChange={(url) => set("image_url", url)} folder="styles" />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Price (₹)</label>
+            <input className={inputClass} type="number" value={v.price || 0} onChange={(e) => set("price", +e.target.value)} />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Sort Order</label>
+            <input className={inputClass} type="number" value={v.sort_order || 0} onChange={(e) => set("sort_order", +e.target.value)} />
+          </div>
         </div>
         <label className="flex items-center gap-2 text-sm text-foreground">
           <input type="checkbox" checked={!!v.is_active} onChange={(e) => set("is_active", e.target.checked)} />
@@ -203,6 +311,7 @@ const AdminEditingStyles = () => (
   />
 );
 
+// --- Sizes ---
 const AdminSizes = () => (
   <AdminCrudTable
     tableName="sizes"
@@ -211,19 +320,35 @@ const AdminSizes = () => (
       { key: "name", label: "Name" },
       { key: "dimensions", label: "Dimensions" },
       { key: "price", label: "Price (₹)" },
-      { key: "is_active", label: "Active" },
+      { key: "is_active", label: "Active", render: (val: boolean) => val ? "✅" : "❌" },
+      { key: "sort_order", label: "Order" },
     ]}
     defaultValues={{ slug: "", name: "", dimensions: "", price: 0, sort_order: 0, is_active: true }}
     renderForm={(v, set) => (
       <>
         <div className="grid grid-cols-3 gap-3">
-          <input className={inputClass} placeholder="Name" value={v.name || ""} onChange={(e) => set("name", e.target.value)} />
-          <input className={inputClass} placeholder="Slug" value={v.slug || ""} onChange={(e) => set("slug", e.target.value)} />
-          <input className={inputClass} placeholder="Dimensions" value={v.dimensions || ""} onChange={(e) => set("dimensions", e.target.value)} />
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Name</label>
+            <input className={inputClass} placeholder="e.g. A4" value={v.name || ""} onChange={(e) => set("name", e.target.value)} />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Slug</label>
+            <input className={inputClass} placeholder="e.g. a4" value={v.slug || ""} onChange={(e) => set("slug", e.target.value)} />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Dimensions</label>
+            <input className={inputClass} placeholder="e.g. 210 × 297 mm" value={v.dimensions || ""} onChange={(e) => set("dimensions", e.target.value)} />
+          </div>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <input className={inputClass} type="number" placeholder="Price" value={v.price || 0} onChange={(e) => set("price", +e.target.value)} />
-          <input className={inputClass} type="number" placeholder="Sort Order" value={v.sort_order || 0} onChange={(e) => set("sort_order", +e.target.value)} />
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Price (₹)</label>
+            <input className={inputClass} type="number" value={v.price || 0} onChange={(e) => set("price", +e.target.value)} />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Sort Order</label>
+            <input className={inputClass} type="number" value={v.sort_order || 0} onChange={(e) => set("sort_order", +e.target.value)} />
+          </div>
         </div>
         <label className="flex items-center gap-2 text-sm text-foreground">
           <input type="checkbox" checked={!!v.is_active} onChange={(e) => set("is_active", e.target.checked)} />
@@ -234,6 +359,7 @@ const AdminSizes = () => (
   />
 );
 
+// --- Frame Materials ---
 const AdminFrameMaterials = () => (
   <AdminCrudTable
     tableName="frame_materials"
@@ -241,18 +367,31 @@ const AdminFrameMaterials = () => (
     columns={[
       { key: "name", label: "Name" },
       { key: "price", label: "Price (₹)" },
-      { key: "is_active", label: "Active" },
+      { key: "is_active", label: "Active", render: (val: boolean) => val ? "✅" : "❌" },
+      { key: "sort_order", label: "Order" },
     ]}
     defaultValues={{ slug: "", name: "", price: 0, sort_order: 0, is_active: true }}
     renderForm={(v, set) => (
       <>
         <div className="grid grid-cols-2 gap-3">
-          <input className={inputClass} placeholder="Name" value={v.name || ""} onChange={(e) => set("name", e.target.value)} />
-          <input className={inputClass} placeholder="Slug" value={v.slug || ""} onChange={(e) => set("slug", e.target.value)} />
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Name</label>
+            <input className={inputClass} placeholder="e.g. Wood" value={v.name || ""} onChange={(e) => set("name", e.target.value)} />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Slug</label>
+            <input className={inputClass} placeholder="e.g. wood" value={v.slug || ""} onChange={(e) => set("slug", e.target.value)} />
+          </div>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <input className={inputClass} type="number" placeholder="Price" value={v.price || 0} onChange={(e) => set("price", +e.target.value)} />
-          <input className={inputClass} type="number" placeholder="Sort Order" value={v.sort_order || 0} onChange={(e) => set("sort_order", +e.target.value)} />
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Price (₹)</label>
+            <input className={inputClass} type="number" value={v.price || 0} onChange={(e) => set("price", +e.target.value)} />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Sort Order</label>
+            <input className={inputClass} type="number" value={v.sort_order || 0} onChange={(e) => set("sort_order", +e.target.value)} />
+          </div>
         </div>
         <label className="flex items-center gap-2 text-sm text-foreground">
           <input type="checkbox" checked={!!v.is_active} onChange={(e) => set("is_active", e.target.checked)} />
@@ -263,24 +402,43 @@ const AdminFrameMaterials = () => (
   />
 );
 
+// --- Frame Colors ---
 const AdminFrameColors = () => (
   <AdminCrudTable
     tableName="frame_colors"
     queryKey="admin_frame_colors"
     columns={[
       { key: "name", label: "Name" },
-      { key: "hex", label: "Color" },
-      { key: "is_active", label: "Active" },
+      { key: "hex", label: "Color", render: (val: string) => (
+        <div className="flex items-center gap-2">
+          <div className="w-5 h-5 rounded-full border border-border" style={{ backgroundColor: val }} />
+          <span>{val}</span>
+        </div>
+      )},
+      { key: "is_active", label: "Active", render: (val: boolean) => val ? "✅" : "❌" },
+      { key: "sort_order", label: "Order" },
     ]}
     defaultValues={{ slug: "", name: "", hex: "#000000", sort_order: 0, is_active: true }}
     renderForm={(v, set) => (
       <>
         <div className="grid grid-cols-3 gap-3">
-          <input className={inputClass} placeholder="Name" value={v.name || ""} onChange={(e) => set("name", e.target.value)} />
-          <input className={inputClass} placeholder="Slug" value={v.slug || ""} onChange={(e) => set("slug", e.target.value)} />
-          <input className={inputClass} type="color" value={v.hex || "#000000"} onChange={(e) => set("hex", e.target.value)} />
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Name</label>
+            <input className={inputClass} placeholder="e.g. Black" value={v.name || ""} onChange={(e) => set("name", e.target.value)} />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Slug</label>
+            <input className={inputClass} placeholder="e.g. black" value={v.slug || ""} onChange={(e) => set("slug", e.target.value)} />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Color</label>
+            <input className={inputClass} type="color" value={v.hex || "#000000"} onChange={(e) => set("hex", e.target.value)} />
+          </div>
         </div>
-        <input className={inputClass} type="number" placeholder="Sort Order" value={v.sort_order || 0} onChange={(e) => set("sort_order", +e.target.value)} />
+        <div>
+          <label className="text-xs text-muted-foreground mb-1 block">Sort Order</label>
+          <input className={inputClass} type="number" value={v.sort_order || 0} onChange={(e) => set("sort_order", +e.target.value)} />
+        </div>
         <label className="flex items-center gap-2 text-sm text-foreground">
           <input type="checkbox" checked={!!v.is_active} onChange={(e) => set("is_active", e.target.checked)} />
           Active
@@ -290,27 +448,44 @@ const AdminFrameColors = () => (
   />
 );
 
+// --- Add-ons ---
 const AdminAddons = () => (
   <AdminCrudTable
     tableName="addons"
     queryKey="admin_addons"
     columns={[
+      { key: "emoji", label: "Icon" },
       { key: "name", label: "Name" },
-      { key: "emoji", label: "Emoji" },
       { key: "price", label: "Price (₹)" },
-      { key: "is_active", label: "Active" },
+      { key: "is_active", label: "Active", render: (val: boolean) => val ? "✅" : "❌" },
+      { key: "sort_order", label: "Order" },
     ]}
     defaultValues={{ slug: "", name: "", emoji: "", price: 0, sort_order: 0, is_active: true }}
     renderForm={(v, set) => (
       <>
         <div className="grid grid-cols-3 gap-3">
-          <input className={inputClass} placeholder="Name" value={v.name || ""} onChange={(e) => set("name", e.target.value)} />
-          <input className={inputClass} placeholder="Slug" value={v.slug || ""} onChange={(e) => set("slug", e.target.value)} />
-          <input className={inputClass} placeholder="Emoji" value={v.emoji || ""} onChange={(e) => set("emoji", e.target.value)} />
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Name</label>
+            <input className={inputClass} placeholder="e.g. Gift Wrap" value={v.name || ""} onChange={(e) => set("name", e.target.value)} />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Slug</label>
+            <input className={inputClass} placeholder="e.g. gift-wrap" value={v.slug || ""} onChange={(e) => set("slug", e.target.value)} />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Emoji</label>
+            <input className={inputClass} placeholder="e.g. 🎁" value={v.emoji || ""} onChange={(e) => set("emoji", e.target.value)} />
+          </div>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <input className={inputClass} type="number" placeholder="Price" value={v.price || 0} onChange={(e) => set("price", +e.target.value)} />
-          <input className={inputClass} type="number" placeholder="Sort Order" value={v.sort_order || 0} onChange={(e) => set("sort_order", +e.target.value)} />
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Price (₹)</label>
+            <input className={inputClass} type="number" value={v.price || 0} onChange={(e) => set("price", +e.target.value)} />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Sort Order</label>
+            <input className={inputClass} type="number" value={v.sort_order || 0} onChange={(e) => set("sort_order", +e.target.value)} />
+          </div>
         </div>
         <label className="flex items-center gap-2 text-sm text-foreground">
           <input type="checkbox" checked={!!v.is_active} onChange={(e) => set("is_active", e.target.checked)} />
@@ -321,8 +496,10 @@ const AdminAddons = () => (
   />
 );
 
+// --- Orders ---
 const AdminOrders = () => {
-  const { data: orders = [] } = useQuery({
+  const qc = useQueryClient();
+  const { data: orders = [], isLoading } = useQuery({
     queryKey: ["admin_orders"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -334,10 +511,20 @@ const AdminOrders = () => {
     },
   });
 
+  const updateStatus = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const { error } = await supabase.from("orders").update({ status } as any).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin_orders"] }),
+  });
+
   return (
     <div>
       <h2 className="font-display text-xl font-bold text-foreground mb-4">Orders</h2>
-      {orders.length === 0 ? (
+      {isLoading ? (
+        <p className="text-muted-foreground text-sm">Loading orders...</p>
+      ) : orders.length === 0 ? (
         <p className="text-muted-foreground">No orders yet.</p>
       ) : (
         <div className="space-y-3">
@@ -350,9 +537,17 @@ const AdminOrders = () => {
                 </div>
                 <div className="text-right">
                   <p className="font-semibold text-primary">₹{order.total_price}</p>
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${order.status === "pending" ? "bg-accent/20 text-accent-foreground" : "bg-primary/20 text-primary"}`}>
-                    {order.status}
-                  </span>
+                  <select
+                    value={order.status}
+                    onChange={(e) => updateStatus.mutate({ id: order.id, status: e.target.value })}
+                    className="text-xs px-2 py-1 rounded-lg border border-border bg-background text-foreground mt-1"
+                  >
+                    <option value="pending">Pending</option>
+                    <option value="confirmed">Confirmed</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
                 </div>
               </div>
               <p className="text-xs text-muted-foreground mt-2">
