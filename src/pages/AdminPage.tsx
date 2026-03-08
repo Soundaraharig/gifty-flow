@@ -800,6 +800,11 @@ const AdminOrders = () => {
                 </div>
                 <div className="text-right">
                   <p className="font-semibold text-primary">₹{order.total_price}</p>
+                  {order.payment_method === "upi" && (
+                    <span className="inline-block text-[10px] bg-primary/10 text-primary font-semibold px-2 py-0.5 rounded-full mt-0.5">
+                      💳 UPI
+                    </span>
+                  )}
                   <select
                     value={order.status}
                     onChange={(e) => updateStatus.mutate({ id: order.id, status: e.target.value })}
