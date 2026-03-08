@@ -4,7 +4,9 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchCheckoutSummary, type CheckoutConfig } from "@/lib/productQueries";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useCart } from "@/hooks/useCart";
 import { toast } from "@/hooks/use-toast";
+import { toast as sonnerToast } from "sonner";
 import { MapPin, Plus, Check } from "lucide-react";
 
 interface CheckoutStepProps {
@@ -23,6 +25,7 @@ interface SavedAddress {
 const CheckoutStep = ({ config, selectedGalleryImage, onOrderPlaced }: CheckoutStepProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { addItem } = useCart();
   const [name, setName] = useState(user?.user_metadata?.full_name || "");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
@@ -276,7 +279,7 @@ const CheckoutStep = ({ config, selectedGalleryImage, onOrderPlaced }: CheckoutS
               <span className="text-foreground">{summary?.sizeName} — ₹{summary?.sizePrice ?? 0}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-muted-foreground">🖼 Frame</span>
+              <span className="text-muted-foreground">🖼 Frame Colour</span>
               <span className="text-foreground">
                 {summary?.materialName}
                 {(summary?.materialPrice ?? 0) > 0 ? ` — ₹${summary?.materialPrice}` : " — Free"}
@@ -305,7 +308,25 @@ const CheckoutStep = ({ config, selectedGalleryImage, onOrderPlaced }: CheckoutS
         </button>
 
         <button
-          onClick={() => navigate("/")}
+          onClick={() => {
+            // Add current config to cart before navigating
+            if (config.editingStyleId) {
+              addItem({
+                type: "frame",
+                name: summary?.styleName || "Custom Frame",
+                image: selectedGalleryImage || "",
+                price: summary?.total || 0,
+                quantity: 1,
+                editingStyleId: config.editingStyleId,
+                sizeId: config.sizeId || undefined,
+                sizeName: summary?.sizeName,
+                frameMaterialId: config.frameMaterialId || undefined,
+                materialName: summary?.materialName,
+              });
+              sonnerToast.success("Added to cart!");
+            }
+            navigate("/categories");
+          }}
           className="w-full mt-2 py-3.5 rounded-full border-2 border-primary text-primary font-semibold text-base hover:bg-primary/5 active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2"
         >
           🛍️ Shop More

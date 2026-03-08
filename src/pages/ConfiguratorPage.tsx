@@ -105,6 +105,10 @@ const ConfiguratorPage = () => {
     setUserSelected(true);
     if (intervalRef.current) clearInterval(intervalRef.current);
     setConfig((p) => ({ ...p, editingStyleId: styleId }));
+    // Auto-scroll to size section
+    setTimeout(() => {
+      document.getElementById("size-section")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 200);
   }, []);
 
   // Determine which style to show in preview
@@ -319,7 +323,12 @@ const ConfiguratorPage = () => {
                 {sizes?.map((size) =>
                 <button
                   key={size.id}
-                  onClick={() => setConfig((p) => ({ ...p, sizeId: size.id }))}
+                  onClick={() => {
+                    setConfig((p) => ({ ...p, sizeId: size.id }));
+                    setTimeout(() => {
+                      document.getElementById("frame-section")?.scrollIntoView({ behavior: "smooth", block: "center" });
+                    }, 200);
+                  }}
                   className={`px-5 py-3 rounded-xl border-2 text-center transition-all duration-200 min-w-[90px] ${
                   config.sizeId === size.id ?
                   "border-primary bg-primary/5 shadow-sm" :
@@ -336,10 +345,10 @@ const ConfiguratorPage = () => {
 
             <div className="h-px bg-border" />
 
-            {/* Frame Material */}
-            <div>
+            {/* Frame Colour */}
+            <div id="frame-section">
               <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider mb-3">
-                Frame Material
+                Frame Colour
               </h3>
               <div className="grid grid-cols-3 gap-3">
                 {materials?.map((mat: any) => {
@@ -426,7 +435,7 @@ const ConfiguratorPage = () => {
           <div className="flex items-center gap-2">
             {!canBuy &&
             <p className="text-[10px] text-destructive font-medium">
-                {!config.editingStyleId ? "Select a style" : !config.sizeId ? "Select a size" : "Select frame material"}
+                {!config.editingStyleId ? "Select a style" : !config.sizeId ? "Select a size" : "Select frame colour"}
               </p>
             }
             {canBuy && (
