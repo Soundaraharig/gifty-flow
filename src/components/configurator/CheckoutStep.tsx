@@ -317,6 +317,51 @@ const CheckoutStep = ({ config, selectedGalleryImage, onOrderPlaced }: CheckoutS
           </div>
         </div>
 
+        {/* UPI Payment Section */}
+        {upiId && (
+          <div className="mt-4">
+            <button
+              onClick={() => setShowUpi(!showUpi)}
+              className="w-full flex items-center justify-between p-4 rounded-xl border border-border bg-card hover:bg-muted/30 transition-colors"
+            >
+              <span className="flex items-center gap-2 font-semibold text-foreground text-sm">
+                💳 Pay via UPI
+              </span>
+              <span className="text-muted-foreground text-xs">{showUpi ? "Hide" : "Show"}</span>
+            </button>
+            {showUpi && (
+              <div className="mt-3 p-4 rounded-xl border border-primary/20 bg-primary/5 space-y-3">
+                <p className="text-sm text-foreground">
+                  Send <span className="font-bold text-primary">₹{summary?.total ?? 0}</span> to the UPI ID below:
+                </p>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 px-3 py-2 rounded-lg bg-card border border-border text-foreground text-sm font-mono select-all">
+                    {upiId}
+                  </code>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(upiId);
+                      sonnerToast.success("UPI ID copied!");
+                    }}
+                    className="px-3 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition-opacity"
+                  >
+                    Copy
+                  </button>
+                </div>
+                <a
+                  href={`upi://pay?pa=${encodeURIComponent(upiId)}&am=${summary?.total ?? 0}&cu=INR`}
+                  className="block w-full text-center py-2.5 rounded-lg bg-accent text-accent-foreground font-medium text-sm hover:opacity-90 transition-opacity"
+                >
+                  📱 Open UPI App
+                </a>
+                <p className="text-xs text-muted-foreground">
+                  After payment, click "Place Order" below to confirm via WhatsApp.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
         <button onClick={handleOrder} disabled={!isValid || placing} className="w-full mt-4 bg-primary text-primary-foreground py-4 rounded-full font-semibold text-base shadow-rose hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
           {placing ? "Placing Order..." : "🎁 Place Order"}
         </button>
