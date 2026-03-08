@@ -187,41 +187,13 @@ const StyleGalleryPage = () => {
                 </div>
               </div>
 
-              {/* Action buttons */}
-              <div className="flex gap-3">
-                <button
-                  onClick={() => {
-                    addItem({
-                      type: "frame",
-                      name: style?.name || "Custom Frame",
-                      image: style?.image_url || "",
-                      price: style?.price || 0,
-                      quantity: 1,
-                      editingStyleId: styleId!,
-                    });
-                    toast.success(`${style?.name} added to cart!`);
-                  }}
-                  className="flex-1 px-6 py-4 rounded-full border-2 border-primary text-primary font-semibold text-base hover:bg-primary/5 active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2"
-                >
-                  🛒 Add to Cart
-                </button>
-                <button
-                  onClick={() => {
-                    addItem({
-                      type: "frame",
-                      name: style?.name || "Custom Frame",
-                      image: style?.image_url || "",
-                      price: style?.price || 0,
-                      quantity: 1,
-                      editingStyleId: styleId!,
-                    });
-                    navigate("/cart");
-                  }}
-                  className="flex-1 px-6 py-4 rounded-full bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold text-base shadow-rose hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2"
-                >
-                  ⚡ Buy Now
-                </button>
-              </div>
+              {/* Select button */}
+              <button
+                onClick={() => navigate(`/configure/photo-frames?style=${styleId}`)}
+                className="w-full px-8 py-4 rounded-full bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold text-base shadow-rose hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2"
+              >
+                ✨ Select
+              </button>
             </div>
           </div>
         )}
