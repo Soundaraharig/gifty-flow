@@ -128,7 +128,7 @@ const ConfiguratorPage = () => {
               <img
                 src={heroImage}
                 alt={selectedStyle?.name || "Select a style"}
-                className="w-full h-full object-cover transition-all duration-500 hover:scale-110" /> :
+                className="w-full h-full object-cover transition-all duration-500" /> :
               <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                   <div className="text-center">
                     <div className="text-5xl mb-3">🎨</div>
