@@ -5,12 +5,11 @@ import StepIndicator from "@/components/configurator/StepIndicator";
 import EditingStyleStep from "@/components/configurator/EditingStyleStep";
 import SizeStep from "@/components/configurator/SizeStep";
 import FrameStep from "@/components/configurator/FrameStep";
-import AddonsStep from "@/components/configurator/AddonsStep";
 import CheckoutStep from "@/components/configurator/CheckoutStep";
 import PriceBar from "@/components/configurator/PriceBar";
 import OrderSuccess from "@/components/configurator/OrderSuccess";
 
-const STEP_LABELS = ["Style", "Size", "Frame", "Add-ons", "Checkout"];
+const STEP_LABELS = ["Style", "Size", "Frame", "Checkout"];
 
 interface ConfigState {
   editingStyleId: string | null;
@@ -36,19 +35,9 @@ const ConfiguratorPage = () => {
     switch (step) {
       case 0: return config.editingStyleId !== null;
       case 1: return config.sizeId !== null;
-      case 2: return config.frameMaterialId !== null && config.frameColorId !== null;
-      case 3: return true;
+      case 2: return config.frameMaterialId !== null;
       default: return false;
     }
-  };
-
-  const toggleAddon = (id: string) => {
-    setConfig((prev) => ({
-      ...prev,
-      addonIds: prev.addonIds.includes(id)
-        ? prev.addonIds.filter((a) => a !== id)
-        : [...prev.addonIds, id],
-    }));
   };
 
   if (orderPlaced) {
@@ -73,7 +62,7 @@ const ConfiguratorPage = () => {
           ← {step === 0 ? "Back to Home" : "Previous Step"}
         </button>
 
-        <StepIndicator currentStep={step} totalSteps={5} labels={STEP_LABELS} />
+        <StepIndicator currentStep={step} totalSteps={4} labels={STEP_LABELS} />
 
         <div className="mb-8">
           {step === 0 && (
@@ -91,26 +80,21 @@ const ConfiguratorPage = () => {
           {step === 2 && (
             <FrameStep
               selectedMaterial={config.frameMaterialId}
-              selectedColor={config.frameColorId}
               onSelectMaterial={(id) => setConfig((p) => ({ ...p, frameMaterialId: id }))}
-              onSelectColor={(id) => setConfig((p) => ({ ...p, frameColorId: id }))}
             />
           )}
-          {step === 3 && (
-            <AddonsStep selected={config.addonIds} onToggle={toggleAddon} />
-          )}
-          {step === 4 && <CheckoutStep config={config} onOrderPlaced={() => setOrderPlaced(true)} />}
+          {step === 3 && <CheckoutStep config={config} onOrderPlaced={() => setOrderPlaced(true)} />}
         </div>
       </div>
 
-      {step < 4 && (
+      {step < 3 && (
         <PriceBar
           selectedStyleId={config.editingStyleId}
           selectedSizeId={config.sizeId}
           selectedMaterialId={config.frameMaterialId}
           selectedAddonIds={config.addonIds}
           currentStep={step}
-          totalSteps={5}
+          totalSteps={4}
           canProceed={canProceed()}
           onNext={() => setStep((s) => s + 1)}
           onBack={() => setStep((s) => s - 1)}
