@@ -121,65 +121,86 @@ const ConfiguratorPage = () => {
         </button>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Left: Hero Image */}
+          {/* Left: Hero Image + Thumbnails side-by-side (YouTube layout) */}
           <div className="sticky top-24 self-start">
-            <div className="aspect-square rounded-2xl overflow-hidden bg-muted border border-border">
-              {heroImage ? (
-                <img
-                  src={heroImage}
-                  alt={selectedStyle?.name || "Select a style"}
-                  className="w-full h-full object-cover transition-all duration-500"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                  <div className="text-center">
-                    <div className="text-5xl mb-3">🎨</div>
-                    <p className="font-medium">Select a style to preview</p>
-                  </div>
-                </div>
-              )}
-            </div>
-            {/* Thumbnail strip - vertical scrollable like YouTube */}
-            <div className="hidden lg:flex flex-col gap-2 mt-3 max-h-[320px] overflow-y-auto pr-1 scrollbar-thin">
-              {styles?.map((style: any) => {
-                const img = style.image_url || FALLBACK_IMAGES[style.slug];
-                return (
-                  <button
-                    key={style.id}
-                    onClick={() => setConfig((p) => ({ ...p, editingStyleId: style.id }))}
-                    className={`flex items-center gap-3 shrink-0 rounded-lg overflow-hidden border-2 transition-all duration-200 text-left ${
-                      config.editingStyleId === style.id
-                        ? "border-primary ring-2 ring-primary/30 bg-primary/5"
-                        : "border-border hover:border-primary/40 bg-card"
-                    }`}
-                  >
-                    {img && <img src={img} alt={style.name} className="w-20 h-14 object-cover shrink-0" loading="lazy" />}
-                    <div className="pr-3 py-1.5 min-w-0">
-                      <p className="text-xs font-medium text-foreground truncate">{style.name}</p>
-                      <p className="text-[10px] text-muted-foreground truncate">{style.description}</p>
+            <div className="hidden lg:flex gap-3">
+              {/* Main image */}
+              <div className="flex-1 aspect-square rounded-2xl overflow-hidden bg-muted border border-border">
+                {heroImage ? (
+                  <img
+                    src={heroImage}
+                    alt={selectedStyle?.name || "Select a style"}
+                    className="w-full h-full object-cover transition-all duration-500"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                    <div className="text-center">
+                      <div className="text-5xl mb-3">🎨</div>
+                      <p className="font-medium">Select a style to preview</p>
                     </div>
-                  </button>
-                );
-              })}
+                  </div>
+                )}
+              </div>
+              {/* Right-side vertical scrollable thumbnails */}
+              <div className="flex flex-col gap-2 w-[140px] shrink-0 max-h-[420px] overflow-y-auto pr-1">
+                {styles?.map((style: any) => {
+                  const img = style.image_url || FALLBACK_IMAGES[style.slug];
+                  return (
+                    <button
+                      key={style.id}
+                      onClick={() => setConfig((p) => ({ ...p, editingStyleId: style.id }))}
+                      className={`flex flex-col shrink-0 rounded-lg overflow-hidden border-2 transition-all duration-200 text-left ${
+                        config.editingStyleId === style.id
+                          ? "border-primary ring-2 ring-primary/30 bg-primary/5"
+                          : "border-border hover:border-primary/40 bg-card"
+                      }`}
+                    >
+                      {img && <img src={img} alt={style.name} className="w-full h-20 object-cover" loading="lazy" />}
+                      <div className="px-2 py-1.5">
+                        <p className="text-[11px] font-medium text-foreground truncate">{style.name}</p>
+                        <p className="text-[9px] text-muted-foreground truncate">{style.description}</p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-            {/* Mobile: horizontal scroll */}
-            <div className="flex lg:hidden gap-2 mt-3 overflow-x-auto pb-1">
-              {styles?.map((style: any) => {
-                const img = style.image_url || FALLBACK_IMAGES[style.slug];
-                return (
-                  <button
-                    key={style.id}
-                    onClick={() => setConfig((p) => ({ ...p, editingStyleId: style.id }))}
-                    className={`shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all duration-200 ${
-                      config.editingStyleId === style.id
-                        ? "border-primary ring-2 ring-primary/30 scale-105"
-                        : "border-border hover:border-primary/40"
-                    }`}
-                  >
-                    {img && <img src={img} alt={style.name} className="w-full h-full object-cover" loading="lazy" />}
-                  </button>
-                );
-              })}
+            {/* Mobile: hero + horizontal thumbnails */}
+            <div className="lg:hidden">
+              <div className="aspect-square rounded-2xl overflow-hidden bg-muted border border-border">
+                {heroImage ? (
+                  <img
+                    src={heroImage}
+                    alt={selectedStyle?.name || "Select a style"}
+                    className="w-full h-full object-cover transition-all duration-500"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                    <div className="text-center">
+                      <div className="text-5xl mb-3">🎨</div>
+                      <p className="font-medium">Select a style to preview</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="flex gap-2 mt-3 overflow-x-auto pb-1">
+                {styles?.map((style: any) => {
+                  const img = style.image_url || FALLBACK_IMAGES[style.slug];
+                  return (
+                    <button
+                      key={style.id}
+                      onClick={() => setConfig((p) => ({ ...p, editingStyleId: style.id }))}
+                      className={`shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all duration-200 ${
+                        config.editingStyleId === style.id
+                          ? "border-primary ring-2 ring-primary/30 scale-105"
+                          : "border-border hover:border-primary/40"
+                      }`}
+                    >
+                      {img && <img src={img} alt={style.name} className="w-full h-full object-cover" loading="lazy" />}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
