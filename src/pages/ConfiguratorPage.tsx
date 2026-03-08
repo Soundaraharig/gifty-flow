@@ -278,10 +278,10 @@ const ConfiguratorPage = () => {
             {/* Title & Price */}
             <div>
               <h1 className="font-display text-3xl lg:text-4xl font-bold text-foreground leading-tight">
-                {selectedStyle?.name || "Custom Art Frame"}
+                {previewStyle?.name || selectedStyle?.name || "Custom Art Frame"}
               </h1>
-              {selectedStyle?.description &&
-              <p className="text-muted-foreground mt-2">{selectedStyle.description}</p>
+              {(previewStyle?.description || selectedStyle?.description) &&
+              <p className="text-muted-foreground mt-2">{previewStyle?.description || selectedStyle?.description}</p>
               }
               <div className="flex items-center gap-2 mt-3">
                 <span className="text-sm">❤️</span>
