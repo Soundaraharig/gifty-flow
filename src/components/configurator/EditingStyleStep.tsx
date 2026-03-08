@@ -1,4 +1,5 @@
-import { useEditingStyles } from "@/hooks/useProductData";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface EditingStyleStepProps {
   selected: string | null;
@@ -6,9 +7,22 @@ interface EditingStyleStepProps {
 }
 
 const EditingStyleStep = ({ selected, onSelect }: EditingStyleStepProps) => {
-  const { data: styles, isLoading } = useEditingStyles();
+  const [styles, setStyles] = useState<any[] | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  if (isLoading) return <div className="text-center py-8 text-muted-foreground">Loading styles...</div>;
+  useEffect(() => {
+    console.log("[EditingStyleStep] fetching styles directly...");
+    supabase
+      .from("editing_styles")
+      .select("*")
+      .eq("is_active", true)
+      .order("sort_order")
+      .then(({ data, error }) => {
+        console.log("[EditingStyleStep] direct result:", { data, error });
+        if (!error) setStyles(data);
+        setIsLoading(false);
+      });
+  }, []);
 
   return (
     <div>
