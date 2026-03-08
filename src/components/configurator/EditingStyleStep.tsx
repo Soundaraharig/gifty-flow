@@ -17,7 +17,7 @@ const EditingStyleStep = ({ selected, onSelect }: EditingStyleStepProps) => {
       </h2>
       <p className="text-muted-foreground mb-6">Select how your photo will be artistically transformed</p>
       <div className="grid grid-cols-2 gap-4">
-        {styles?.map((style) => (
+        {styles?.map((style: any) => (
           <button
             key={style.id}
             onClick={() => onSelect(style.id)}

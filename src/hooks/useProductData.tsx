@@ -1,72 +1,46 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+const headers = {
+  'apikey': SUPABASE_KEY,
+  'Authorization': `Bearer ${SUPABASE_KEY}`,
+  'Content-Type': 'application/json',
+};
+
+async function fetchTable(table: string, params: string = '') {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${params}`, { headers });
+  if (!res.ok) throw new Error(`Failed to fetch ${table}: ${res.status}`);
+  return res.json();
+}
 
 export const useEditingStyles = () =>
   useQuery({
     queryKey: ["editing_styles"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("editing_styles")
-        .select("*")
-        .eq("is_active", true)
-        .order("sort_order");
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => fetchTable("editing_styles", "is_active=eq.true&select=*&order=sort_order"),
   });
 
 export const useSizes = () =>
   useQuery({
     queryKey: ["sizes"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("sizes")
-        .select("*")
-        .eq("is_active", true)
-        .order("sort_order");
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => fetchTable("sizes", "is_active=eq.true&select=*&order=sort_order"),
   });
 
 export const useFrameMaterials = () =>
   useQuery({
     queryKey: ["frame_materials"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("frame_materials")
-        .select("*")
-        .eq("is_active", true)
-        .order("sort_order");
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => fetchTable("frame_materials", "is_active=eq.true&select=*&order=sort_order"),
   });
 
 export const useFrameColors = () =>
   useQuery({
     queryKey: ["frame_colors"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("frame_colors")
-        .select("*")
-        .eq("is_active", true)
-        .order("sort_order");
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => fetchTable("frame_colors", "is_active=eq.true&select=*&order=sort_order"),
   });
 
 export const useAddons = () =>
   useQuery({
     queryKey: ["addons"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("addons")
-        .select("*")
-        .eq("is_active", true)
-        .order("sort_order");
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => fetchTable("addons", "is_active=eq.true&select=*&order=sort_order"),
   });
