@@ -4,6 +4,22 @@ import { useQuery } from "@tanstack/react-query";
 import Header from "@/components/Header";
 import { fetchActiveResinTypes, ResinProductType } from "@/lib/resinQueries";
 
+import resinCoastersImg from "@/assets/resin-coasters.jpg";
+import resinKeychainsImg from "@/assets/resin-keychains.jpg";
+import resinTraysImg from "@/assets/resin-trays.jpg";
+import resinBookmarksImg from "@/assets/resin-bookmarks.jpg";
+import resinPhoneGripsImg from "@/assets/resin-phone-grips.jpg";
+import resinWallClocksImg from "@/assets/resin-wall-clocks.jpg";
+
+const FALLBACK_IMAGES: Record<string, string> = {
+  "resin-coasters": resinCoastersImg,
+  "resin-keychains": resinKeychainsImg,
+  "resin-trays": resinTraysImg,
+  "resin-bookmarks": resinBookmarksImg,
+  "resin-phone-grips": resinPhoneGripsImg,
+  "resin-wall-clocks": resinWallClocksImg,
+};
+
 const ResinConfiguratorPage = () => {
   const navigate = useNavigate();
   const { data: products, isLoading } = useQuery({
@@ -55,9 +71,9 @@ const ResinConfiguratorPage = () => {
             >
               {/* Image */}
               <div className="aspect-square bg-muted overflow-hidden">
-                {product.image_url ? (
+                {(product.image_url || FALLBACK_IMAGES[product.slug]) ? (
                   <img
-                    src={product.image_url}
+                    src={product.image_url || FALLBACK_IMAGES[product.slug]}
                     alt={product.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     loading="lazy"
