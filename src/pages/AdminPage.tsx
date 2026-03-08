@@ -12,7 +12,7 @@ type Tab = "styles" | "sizes" | "materials" | "orders" | "gallery" | "resin" | "
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
 const AdminPage = () => {
-  const { user, isAdmin, loading, signInWithGoogle } = useAuth();
+  const { user, isAdmin, isSubscriber, loading, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>("styles");
 
@@ -30,26 +30,31 @@ const AdminPage = () => {
     );
   }
 
-  if (!isAdmin) {
+  if (!isAdmin && !isSubscriber) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-background">
-        <p className="text-destructive font-semibold">Access denied. Admins only.</p>
+        <p className="text-destructive font-semibold">Access denied.</p>
         <p className="text-sm text-muted-foreground">Signed in as {user.email}</p>
-        <button onClick={() => navigate("/")} className="text-primary underline">Go Home</button>
+        <div className="flex gap-3">
+          <button onClick={() => navigate("/subscribe")} className="px-4 py-2 rounded-full bg-primary text-primary-foreground text-sm font-medium">Subscribe</button>
+          <button onClick={() => navigate("/")} className="text-primary underline text-sm">Go Home</button>
+        </div>
       </div>
     );
   }
 
-  const tabs: { id: Tab; label: string }[] = [
+  const allTabs: { id: Tab; label: string; adminOnly?: boolean }[] = [
     { id: "styles", label: "Editing Styles" },
     { id: "sizes", label: "Sizes" },
     { id: "materials", label: "Frame Materials" },
     { id: "resin", label: "Resin Types" },
     { id: "orders", label: "Orders" },
     { id: "gallery", label: "Gallery Images" },
-    { id: "users", label: "Users" },
-    { id: "settings", label: "Settings" },
+    { id: "users", label: "Users", adminOnly: true },
+    { id: "settings", label: "Settings", adminOnly: true },
   ];
+
+  const tabs = allTabs.filter((t) => !t.adminOnly || isAdmin);
 
   return (
     <div className="min-h-screen bg-background">

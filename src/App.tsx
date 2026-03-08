@@ -16,6 +16,8 @@ import MyOrdersPage from "./pages/MyOrdersPage";
 import AdminPage from "./pages/AdminPage";
 import CategoriesPage from "./pages/CategoriesPage";
 import CartPage from "./pages/CartPage";
+import SubscriptionPage from "./pages/SubscriptionPage";
+import SubscriptionSuccessPage from "./pages/SubscriptionSuccessPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,6 +41,8 @@ const App = () => (
               <Route path="/my-orders" element={<ProtectedRoute><MyOrdersPage /></ProtectedRoute>} />
               <Route path="/cart" element={<ProtectedRoute><CartPage /></ProtectedRoute>} />
               <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
+              <Route path="/subscribe" element={<ProtectedRoute><SubscriptionPage /></ProtectedRoute>} />
+              <Route path="/subscription-success" element={<ProtectedRoute><SubscriptionSuccessPage /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
