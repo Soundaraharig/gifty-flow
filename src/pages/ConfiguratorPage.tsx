@@ -306,14 +306,21 @@ const ConfiguratorPage = () => {
               <span className="text-xs text-muted-foreground line-through">₹{Math.round(total * 1.25)}</span>
             )}
           </div>
-          <button
-            onClick={() => setShowCheckout(true)}
-            disabled={!canBuy}
-            className="relative px-8 py-3.5 rounded-full bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold text-base shadow-rose hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center gap-2"
-          >
-            <span className="text-lg">🛒</span>
-            {canBuy ? "Buy Now" : "Select Options"}
-          </button>
+          <div className="flex flex-col items-end gap-1">
+            {!canBuy && (
+              <p className="text-[10px] text-destructive font-medium">
+                {!config.editingStyleId ? "Select a style" : !config.sizeId ? "Select a size" : "Select frame material"}
+              </p>
+            )}
+            <button
+              onClick={() => setShowCheckout(true)}
+              disabled={!canBuy}
+              className="relative px-8 py-3.5 rounded-full bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold text-base shadow-rose hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center gap-2"
+            >
+              <span className="text-lg">🛒</span>
+              {canBuy ? "Buy Now" : "Select Options"}
+            </button>
+          </div>
         </div>
       </div>
     </div>
