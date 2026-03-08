@@ -365,12 +365,17 @@ const AdminFrameMaterials = () => (
     tableName="frame_materials"
     queryKey="admin_frame_materials"
     columns={[
+      {
+        key: "image_url", label: "Image",
+        render: (val: string) => val ? <img src={val} alt="" className="w-12 h-8 object-cover rounded" /> : <span className="text-muted-foreground text-xs">No image</span>
+      },
       { key: "name", label: "Name" },
       { key: "price", label: "Price (₹)" },
+      { key: "stock", label: "Stock" },
       { key: "is_active", label: "Active", render: (val: boolean) => val ? "✅" : "❌" },
       { key: "sort_order", label: "Order" },
     ]}
-    defaultValues={{ slug: "", name: "", price: 0, sort_order: 0, is_active: true }}
+    defaultValues={{ slug: "", name: "", price: 0, image_url: "", stock: 10, sort_order: 0, is_active: true }}
     renderForm={(v, set) => (
       <>
         <div className="grid grid-cols-2 gap-3">
@@ -383,10 +388,18 @@ const AdminFrameMaterials = () => (
             <input className={inputClass} placeholder="e.g. wood" value={v.slug || ""} onChange={(e) => set("slug", e.target.value)} />
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="text-xs text-muted-foreground mb-1 block">Frame Image</label>
+          <ImageUploadField value={v.image_url || ""} onChange={(url) => set("image_url", url)} folder="materials" />
+        </div>
+        <div className="grid grid-cols-3 gap-3">
           <div>
             <label className="text-xs text-muted-foreground mb-1 block">Price (₹)</label>
             <input className={inputClass} type="number" value={v.price || 0} onChange={(e) => set("price", +e.target.value)} />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Stock</label>
+            <input className={inputClass} type="number" value={v.stock ?? 10} onChange={(e) => set("stock", +e.target.value)} />
           </div>
           <div>
             <label className="text-xs text-muted-foreground mb-1 block">Sort Order</label>
