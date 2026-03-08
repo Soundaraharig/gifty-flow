@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import ConfiguratorPage from "./pages/ConfiguratorPage";
 import MyOrdersPage from "./pages/MyOrdersPage";
 import AdminPage from "./pages/AdminPage";
+import CategoriesPage from "./pages/CategoriesPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
