@@ -64,8 +64,8 @@ const AdminPage = () => {
   );
 };
 
-// Generic admin CRUD table component
-function AdminCrudTable<T extends { id: string }>({
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function AdminCrudTable({
   tableName,
   queryKey,
   columns,
@@ -74,12 +74,12 @@ function AdminCrudTable<T extends { id: string }>({
 }: {
   tableName: string;
   queryKey: string;
-  columns: { key: keyof T; label: string }[];
-  renderForm: (values: Partial<T>, onChange: (k: keyof T, v: any) => void) => React.ReactNode;
-  defaultValues: Partial<T>;
+  columns: { key: string; label: string }[];
+  renderForm: (values: Record<string, any>, onChange: (k: string, v: any) => void) => React.ReactNode;
+  defaultValues: Record<string, any>;
 }) {
   const qc = useQueryClient();
-  const [editing, setEditing] = useState<Partial<T> | null>(null);
+  const [editing, setEditing] = useState<Record<string, any> | null>(null);
   const [isNew, setIsNew] = useState(false);
 
   const { data: rows = [] } = useQuery({
@@ -87,12 +87,12 @@ function AdminCrudTable<T extends { id: string }>({
     queryFn: async () => {
       const { data, error } = await supabase.from(tableName as any).select("*").order("sort_order");
       if (error) throw error;
-      return data as T[];
+      return (data ?? []) as Record<string, any>[];
     },
   });
 
   const saveMutation = useMutation({
-    mutationFn: async (values: Partial<T>) => {
+    mutationFn: async (values: Record<string, any>) => {
       if (isNew) {
         const { error } = await supabase.from(tableName as any).insert(values as any);
         if (error) throw error;
