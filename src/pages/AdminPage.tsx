@@ -816,6 +816,7 @@ const SETTINGS_FIELDS = [
   { key: "admin_whatsapp", label: "Admin WhatsApp Number", placeholder: "e.g. 919876543210", hint: "International format without + sign" },
   { key: "currency_symbol", label: "Currency Symbol", placeholder: "e.g. ₹ or $", hint: "Shown next to all prices" },
   { key: "min_order_amount", label: "Minimum Order Amount", placeholder: "e.g. 500", hint: "Set to 0 for no minimum", type: "number" },
+  { key: "upi_id", label: "UPI ID", placeholder: "e.g. yourname@upi", hint: "Customers will see this at checkout to pay via UPI" },
 ];
 
 const AdminSettings = () => {

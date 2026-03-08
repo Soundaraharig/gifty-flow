@@ -16,6 +16,20 @@ const CartPage = () => {
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [notes, setNotes] = useState("");
+  const [upiId, setUpiId] = useState("");
+  const [showUpi, setShowUpi] = useState(false);
+
+  // Fetch UPI ID from settings
+  useState(() => {
+    supabase
+      .from("site_settings" as any)
+      .select("value")
+      .eq("key", "upi_id")
+      .maybeSingle()
+      .then(({ data }) => {
+        if ((data as any)?.value) setUpiId((data as any).value);
+      });
+  });
 
   const handlePlaceOrder = async () => {
     if (!name.trim() || !phone.trim() || placing || items.length === 0) return;
