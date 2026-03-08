@@ -155,6 +155,8 @@ function AdminCrudTable({
   const qc = useQueryClient();
   const [editing, setEditing] = useState<Record<string, any> | null>(null);
   const [isNew, setIsNew] = useState(false);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [overIndex, setOverIndex] = useState<number | null>(null);
 
   const { data: rows = [], isLoading } = useQuery({
     queryKey: [queryKey],
@@ -190,6 +192,48 @@ function AdminCrudTable({
     onError: (err: any) => alert("Delete failed: " + err.message),
   });
 
+  const reorderMutation = useMutation({
+    mutationFn: async (reordered: Record<string, any>[]) => {
+      const updates = reordered.map((row, i) =>
+        supabase.from(tableName as any).update({ sort_order: i } as any).eq("id", row.id as any)
+      );
+      const results = await Promise.all(updates);
+      const failed = results.find((r) => r.error);
+      if (failed?.error) throw failed.error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: [queryKey] }),
+    onError: (err: any) => alert("Reorder failed: " + err.message),
+  });
+
+  const handleDragStart = (index: number) => {
+    setDragIndex(index);
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    setOverIndex(index);
+  };
+
+  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+    if (dragIndex === null || dragIndex === dropIndex) {
+      setDragIndex(null);
+      setOverIndex(null);
+      return;
+    }
+    const reordered = [...rows];
+    const [moved] = reordered.splice(dragIndex, 1);
+    reordered.splice(dropIndex, 0, moved);
+    reorderMutation.mutate(reordered);
+    setDragIndex(null);
+    setOverIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDragIndex(null);
+    setOverIndex(null);
+  };
+
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
@@ -224,6 +268,7 @@ function AdminCrudTable({
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border">
+                <th className="py-2 px-2 text-muted-foreground font-medium w-8"></th>
                 {columns.map((c) => (
                   <th key={c.key} className="text-left py-2 px-3 text-muted-foreground font-medium">{c.label}</th>
                 ))}
@@ -231,8 +276,21 @@ function AdminCrudTable({
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => (
-                <tr key={row.id} className="border-b border-border/50 hover:bg-muted/30">
+              {rows.map((row, index) => (
+                <tr
+                  key={row.id}
+                  draggable
+                  onDragStart={() => handleDragStart(index)}
+                  onDragOver={(e) => handleDragOver(e, index)}
+                  onDrop={(e) => handleDrop(e, index)}
+                  onDragEnd={handleDragEnd}
+                  className={`border-b border-border/50 transition-colors cursor-grab active:cursor-grabbing ${
+                    dragIndex === index ? "opacity-40" : ""
+                  } ${overIndex === index && dragIndex !== index ? "bg-primary/10 border-primary" : "hover:bg-muted/30"}`}
+                >
+                  <td className="py-2 px-2 text-muted-foreground">
+                    <span className="text-base select-none">⠿</span>
+                  </td>
                   {columns.map((c) => (
                     <td key={c.key} className="py-2 px-3 text-foreground">
                       {c.render ? c.render(row[c.key], row) : String(row[c.key] ?? "")}
@@ -247,6 +305,7 @@ function AdminCrudTable({
             </tbody>
           </table>
           {rows.length === 0 && <p className="text-center text-muted-foreground text-sm py-4">No items yet.</p>}
+          {reorderMutation.isPending && <p className="text-center text-muted-foreground text-xs py-2">Saving order...</p>}
         </div>
       )}
     </div>
