@@ -481,7 +481,9 @@ const AdminGalleryImages = () => {
   const fileRef = useRef<HTMLInputElement>(null);
   const [selectedStyleId, setSelectedStyleId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState("");
   const [editingTitle, setEditingTitle] = useState<{ id: string; title: string } | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   const { data: styles = [] } = useQuery({
     queryKey: ["admin_editing_styles"],
@@ -507,30 +509,48 @@ const AdminGalleryImages = () => {
     enabled: !!selectedStyleId,
   });
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !selectedStyleId) return;
+  const uploadFiles = async (files: FileList | File[]) => {
+    if (!selectedStyleId || files.length === 0) return;
     setUploading(true);
+    const fileArr = Array.from(files);
+    let uploaded = 0;
     try {
-      const ext = file.name.split(".").pop();
-      const path = `gallery/${selectedStyleId}/${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("product-images").upload(path, file, { upsert: true });
-      if (error) throw error;
-      const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/product-images/${path}`;
-      const { error: insertError } = await supabase.from("style_gallery_images" as any).insert({
-        editing_style_id: selectedStyleId,
-        image_url: publicUrl,
-        sort_order: galleryImages.length,
-      } as any);
-      if (insertError) throw insertError;
+      for (const file of fileArr) {
+        setUploadProgress(`Uploading ${++uploaded}/${fileArr.length}...`);
+        const ext = file.name.split(".").pop();
+        const path = `gallery/${selectedStyleId}/${Date.now()}-${Math.random().toString(36).slice(2, 6)}.${ext}`;
+        const { error } = await supabase.storage.from("product-images").upload(path, file, { upsert: true });
+        if (error) throw error;
+        const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/product-images/${path}`;
+        const { error: insertError } = await supabase.from("style_gallery_images" as any).insert({
+          editing_style_id: selectedStyleId,
+          image_url: publicUrl,
+          sort_order: galleryImages.length + uploaded,
+        } as any);
+        if (insertError) throw insertError;
+      }
       qc.invalidateQueries({ queryKey: ["admin_gallery", selectedStyleId] });
     } catch (err: any) {
       alert("Upload failed: " + err.message);
     } finally {
       setUploading(false);
+      setUploadProgress("");
       if (fileRef.current) fileRef.current.value = "";
     }
   };
+
+  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) uploadFiles(e.target.files);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files) uploadFiles(e.dataTransfer.files);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(true); };
+  const handleDragLeave = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(false); };
 
   const deleteImage = async (id: string) => {
     if (!confirm("Delete this gallery image?")) return;
@@ -551,9 +571,8 @@ const AdminGalleryImages = () => {
   return (
     <div>
       <h2 className="font-display text-xl font-bold text-foreground mb-4">Gallery Images</h2>
-      <p className="text-sm text-muted-foreground mb-4">Upload model images per editing style. Users can browse these from the "View More" button.</p>
+      <p className="text-sm text-muted-foreground mb-4">Upload model images per editing style. Drag & drop multiple images at once.</p>
 
-      {/* Style Selector */}
       <div className="flex flex-wrap gap-2 mb-6">
         {styles.map((s: any) => (
           <button
@@ -574,19 +593,33 @@ const AdminGalleryImages = () => {
         <p className="text-muted-foreground text-sm">Select a style above to manage its gallery images.</p>
       ) : (
         <>
-          {/* Upload button */}
-          <div className="mb-4">
-            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleUpload} />
-            <button
-              onClick={() => fileRef.current?.click()}
-              disabled={uploading}
-              className="px-4 py-2 rounded-full bg-primary text-primary-foreground text-sm font-medium disabled:opacity-50"
-            >
-              {uploading ? "Uploading..." : "+ Upload Image"}
-            </button>
+          {/* Drag & Drop Upload Zone */}
+          <div
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onClick={() => !uploading && fileRef.current?.click()}
+            className={`mb-6 p-8 rounded-xl border-2 border-dashed text-center cursor-pointer transition-all ${
+              isDragging
+                ? "border-primary bg-primary/5 scale-[1.01]"
+                : "border-border bg-muted/30 hover:border-primary/40 hover:bg-muted/50"
+            }`}
+          >
+            <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFileInput} />
+            {uploading ? (
+              <div className="space-y-2">
+                <div className="animate-spin h-6 w-6 border-4 border-primary border-t-transparent rounded-full mx-auto" />
+                <p className="text-sm font-medium text-foreground">{uploadProgress}</p>
+              </div>
+            ) : (
+              <>
+                <div className="text-3xl mb-2">📁</div>
+                <p className="text-sm font-medium text-foreground">Drag & drop images here</p>
+                <p className="text-xs text-muted-foreground mt-1">or click to browse • Multiple files supported</p>
+              </>
+            )}
           </div>
 
-          {/* Grid of images */}
           {isLoading ? (
             <p className="text-muted-foreground text-sm">Loading...</p>
           ) : galleryImages.length === 0 ? (
