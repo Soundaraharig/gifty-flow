@@ -181,6 +181,25 @@ const CheckoutStep = ({ config, selectedGalleryImage, onOrderPlaced }: CheckoutS
       // Direct page redirect to WhatsApp (works reliably on all devices)
       window.location.href = waUrl;
 
+      // Send email notification (fire and forget)
+      supabase.functions.invoke("send-order-email", {
+        body: {
+          type: paidViaUpi ? "upi_payment" : "new_order",
+          orderId: order.id,
+          orderDetails: {
+            customerName: name.trim(),
+            customerPhone: phone.trim(),
+            styleName: summary?.styleName,
+            sizeName: summary?.sizeName,
+            materialName: summary?.materialName,
+            address: address.trim() || null,
+            notes: notes.trim() || null,
+            total: summary?.total ?? 0,
+            paymentMethod: paidViaUpi ? "upi" : "cod",
+          },
+        },
+      }).catch(console.error);
+
       onOrderPlaced?.();
     } catch (err: any) {
       toast({
