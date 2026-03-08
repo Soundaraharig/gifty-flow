@@ -8,6 +8,7 @@ import FrameStep from "@/components/configurator/FrameStep";
 import AddonsStep from "@/components/configurator/AddonsStep";
 import CheckoutStep from "@/components/configurator/CheckoutStep";
 import PriceBar from "@/components/configurator/PriceBar";
+import OrderSuccess from "@/components/configurator/OrderSuccess";
 
 const STEP_LABELS = ["Style", "Size", "Frame", "Add-ons", "Checkout"];
 
@@ -22,6 +23,7 @@ interface ConfigState {
 const ConfiguratorPage = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
+  const [orderPlaced, setOrderPlaced] = useState(false);
   const [config, setConfig] = useState<ConfigState>({
     editingStyleId: null,
     sizeId: null,
@@ -48,6 +50,17 @@ const ConfiguratorPage = () => {
         : [...prev.addonIds, id],
     }));
   };
+
+  if (orderPlaced) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="container mx-auto px-4 pt-24 max-w-lg">
+          <OrderSuccess />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -86,7 +99,7 @@ const ConfiguratorPage = () => {
           {step === 3 && (
             <AddonsStep selected={config.addonIds} onToggle={toggleAddon} />
           )}
-          {step === 4 && <CheckoutStep config={config} />}
+          {step === 4 && <CheckoutStep config={config} onOrderPlaced={() => setOrderPlaced(true)} />}
         </div>
       </div>
 
