@@ -105,6 +105,10 @@ const ConfiguratorPage = () => {
     setUserSelected(true);
     if (intervalRef.current) clearInterval(intervalRef.current);
     setConfig((p) => ({ ...p, editingStyleId: styleId }));
+    // Restart slideshow after 5 seconds of inactivity
+    intervalRef.current = setTimeout(() => {
+      setUserSelected(false);
+    }, 5000) as unknown as ReturnType<typeof setInterval>;
   }, []);
 
   // Determine which style to show in preview
@@ -265,8 +269,8 @@ const ConfiguratorPage = () => {
                     </button>
                     {isSelected && userSelected && (
                       <button
-                        onClick={() => navigate(`/style-gallery/${style.id}`)}
-                        className="absolute -bottom-1 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-card/90 backdrop-blur-sm border border-border text-[9px] font-medium text-foreground hover:bg-card transition-colors whitespace-nowrap shadow-sm z-10"
+                        onClick={(e) => { e.stopPropagation(); navigate(`/style-gallery/${style.id}`); }}
+                        className="absolute inset-0 flex items-center justify-center bg-foreground/40 rounded-lg text-[9px] font-medium text-primary-foreground hover:bg-foreground/50 transition-colors z-10"
                       >
                         View More
                       </button>
@@ -294,8 +298,8 @@ const ConfiguratorPage = () => {
                   </button>
                   {isSelected && userSelected && (
                     <button
-                      onClick={() => navigate(`/style-gallery/${style.id}`)}
-                      className="absolute -bottom-1 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-card/90 backdrop-blur-sm border border-border text-[9px] font-medium text-foreground hover:bg-card transition-colors whitespace-nowrap shadow-sm z-10"
+                      onClick={(e) => { e.stopPropagation(); navigate(`/style-gallery/${style.id}`); }}
+                      className="absolute inset-0 flex items-center justify-center bg-foreground/40 rounded-md text-[9px] font-medium text-primary-foreground hover:bg-foreground/50 transition-colors z-10"
                     >
                       View More
                     </button>
