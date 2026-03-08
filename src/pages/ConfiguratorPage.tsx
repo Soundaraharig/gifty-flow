@@ -40,6 +40,7 @@ interface ConfigState {
 
 const ConfiguratorPage = () => {
   const navigate = useNavigate();
+  const { addItem } = useCart();
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
   const [config, setConfig] = useState<ConfigState>({
