@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import { MapPin, Plus, Check } from "lucide-react";
+import { ToastAction } from "@/components/ui/toast";
 
 interface CheckoutStepProps {
   config: CheckoutConfig;
@@ -154,16 +155,15 @@ const CheckoutStep = ({ config, onOrderPlaced }: CheckoutStepProps) => {
         .maybeSingle();
       const adminPhone = (settingRow as any)?.value || "919876543210";
       const waUrl = `https://api.whatsapp.com/send?phone=${adminPhone}&text=${encodeURIComponent(orderText)}`;
-      // Use link click to avoid popup blockers / iframe sandbox issues
-      const a = document.createElement("a");
-      a.href = waUrl;
-      a.target = "_blank";
-      a.rel = "noopener noreferrer";
-      a.click();
 
       toast({
         title: "Order placed! 🎉",
-        description: "We've received your order. You'll hear from us soon!",
+        description: "Your order is saved. Tap below to send details to admin on WhatsApp.",
+        action: (
+          <ToastAction altText="Open WhatsApp" onClick={() => window.open(waUrl, "_blank", "noopener,noreferrer")}>
+            Open WhatsApp
+          </ToastAction>
+        ),
       });
 
       onOrderPlaced?.();
