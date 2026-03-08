@@ -44,8 +44,8 @@ const AuthPage = () => {
         });
         if (error) throw error;
         toast({
-          title: "Check your email",
-          description: "We've sent you a verification link. Please verify your email before signing in.",
+          title: "Account created!",
+          description: "You're now signed in.",
         });
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
