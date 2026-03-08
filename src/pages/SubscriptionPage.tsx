@@ -104,7 +104,7 @@ const SubscriptionPage = () => {
   };
 
   const openUpiApp = () => {
-    window.location.href = `upi://pay?pa=${upiId}&pn=ZeroGifts&am=49&cu=INR&tn=VIP+Subscription`;
+    window.location.href = `upi://pay?pa=${upiId}&pn=ZeroGifts&am=29&cu=INR&tn=VIP+Subscription`;
   };
 
   const isApprovedOrSubscriber = userRole === "subscriber" || existingRequest?.status === "approved";
@@ -146,7 +146,7 @@ const SubscriptionPage = () => {
 
         <div className="p-6 rounded-2xl border border-border bg-card mb-6">
           <div className="text-center mb-4">
-            <span className="text-4xl font-bold text-primary">₹49</span>
+            <span className="text-4xl font-bold text-primary">₹29</span>
             <span className="text-muted-foreground">/month</span>
           </div>
           <ul className="space-y-2 text-sm text-foreground">
@@ -166,7 +166,7 @@ const SubscriptionPage = () => {
           <div className="space-y-4">
             {/* Step 1: Pay */}
             <div className="p-5 rounded-xl border border-border bg-card">
-              <h3 className="font-semibold text-foreground mb-3">Step 1: Pay ₹49 via UPI</h3>
+              <h3 className="font-semibold text-foreground mb-3">Step 1: Pay ₹29 via UPI</h3>
               {upiId ? (
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 p-3 rounded-lg bg-muted">
