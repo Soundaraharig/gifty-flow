@@ -5,13 +5,20 @@ export const useEditingStyles = () =>
   useQuery({
     queryKey: ["editing_styles"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("editing_styles")
-        .select("*")
-        .eq("is_active", true)
-        .order("sort_order");
-      if (error) throw error;
-      return data;
+      console.log("[useEditingStyles] queryFn called, supabase URL:", import.meta.env.VITE_SUPABASE_URL);
+      try {
+        const { data, error } = await supabase
+          .from("editing_styles")
+          .select("*")
+          .eq("is_active", true)
+          .order("sort_order");
+        console.log("[useEditingStyles] result:", { data, error });
+        if (error) throw error;
+        return data;
+      } catch (e) {
+        console.error("[useEditingStyles] exception:", e);
+        throw e;
+      }
     },
   });
 
