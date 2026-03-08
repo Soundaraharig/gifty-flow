@@ -47,14 +47,58 @@ const ConfiguratorPage = () => {
     addonIds: []
   });
 
-  const { data: styles, isLoading: loadingStyles } = useEditingStyles();
-  const { data: sizes, isLoading: loadingSizes } = useSizes();
-  const { data: materials, isLoading: loadingMaterials } = useFrameMaterials();
+  const [userSelected, setUserSelected] = useState(false);
+  const [slideshowIndex, setSlideshowIndex] = useState(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const selectedStyle = styles?.find((s: any) => s.id === config.editingStyleId);
-  const heroImage = selectedStyle ?
-  selectedStyle.image_url || FALLBACK_IMAGES[selectedStyle.slug] :
-  null;
+  // Auto-slideshow: cycle through styles until user selects one
+  useEffect(() => {
+    if (userSelected || !styles?.length) return;
+    intervalRef.current = setInterval(() => {
+      setSlideshowIndex((prev) => (prev + 1) % styles.length);
+    }, 2500);
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+  }, [userSelected, styles]);
+
+  // Arrow key navigation
+  useEffect(() => {
+    if (!styles?.length) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        e.preventDefault();
+        if (!userSelected) setUserSelected(true);
+        setConfig((p) => {
+          const currentIdx = styles.findIndex((s: any) => s.id === p.editingStyleId);
+          const nextIdx = currentIdx < styles.length - 1 ? currentIdx + 1 : 0;
+          return { ...p, editingStyleId: styles[nextIdx].id };
+        });
+      } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        e.preventDefault();
+        if (!userSelected) setUserSelected(true);
+        setConfig((p) => {
+          const currentIdx = styles.findIndex((s: any) => s.id === p.editingStyleId);
+          const prevIdx = currentIdx > 0 ? currentIdx - 1 : styles.length - 1;
+          return { ...p, editingStyleId: styles[prevIdx].id };
+        });
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [styles, userSelected]);
+
+  const handleSelectStyle = useCallback((styleId: string) => {
+    setUserSelected(true);
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    setConfig((p) => ({ ...p, editingStyleId: styleId }));
+  }, []);
+
+  // Determine which style to show in preview
+  const previewStyle = userSelected
+    ? styles?.find((s: any) => s.id === config.editingStyleId)
+    : styles?.[slideshowIndex];
+  const heroImage = previewStyle
+    ? previewStyle.image_url || FALLBACK_IMAGES[previewStyle.slug]
+    : null;
 
   const { data: total = 0 } = useQuery({
     queryKey: ["price_total", config.editingStyleId, config.sizeId, config.frameMaterialId, config.addonIds],
