@@ -47,7 +47,12 @@ const ConfiguratorPage = () => {
     addonIds: []
   });
 
-  const [userSelected, setUserSelected] = useState(false);
+  const { data: styles, isLoading: loadingStyles } = useEditingStyles();
+  const { data: sizes, isLoading: loadingSizes } = useSizes();
+  const { data: materials, isLoading: loadingMaterials } = useFrameMaterials();
+
+  const selectedStyle = styles?.find((s: any) => s.id === config.editingStyleId);
+
   const [slideshowIndex, setSlideshowIndex] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
