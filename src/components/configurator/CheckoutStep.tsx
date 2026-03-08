@@ -31,6 +31,20 @@ const CheckoutStep = ({ config, selectedGalleryImage, onOrderPlaced }: CheckoutS
   const [address, setAddress] = useState("");
   const [notes, setNotes] = useState("");
   const [placing, setPlacing] = useState(false);
+  const [upiId, setUpiId] = useState("");
+  const [showUpi, setShowUpi] = useState(false);
+
+  // Fetch UPI ID
+  useEffect(() => {
+    supabase
+      .from("site_settings" as any)
+      .select("value")
+      .eq("key", "upi_id")
+      .maybeSingle()
+      .then(({ data }) => {
+        if ((data as any)?.value) setUpiId((data as any).value);
+      });
+  }, []);
 
   // Saved addresses
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
