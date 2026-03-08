@@ -154,17 +154,10 @@ const CheckoutStep = ({ config, onOrderPlaced }: CheckoutStepProps) => {
         .eq("key", "admin_whatsapp")
         .maybeSingle();
       const adminPhone = (settingRow as any)?.value || "919876543210";
-      const waUrl = `https://api.whatsapp.com/send?phone=${adminPhone}&text=${encodeURIComponent(orderText)}`;
+      const waUrl = `https://wa.me/${adminPhone}?text=${encodeURIComponent(orderText)}`;
 
-      toast({
-        title: "Order placed! 🎉",
-        description: "Your order is saved. Tap below to send details to admin on WhatsApp.",
-        action: (
-          <ToastAction altText="Open WhatsApp" onClick={() => window.open(waUrl, "_blank", "noopener,noreferrer")}>
-            Open WhatsApp
-          </ToastAction>
-        ),
-      });
+      // Direct page redirect to WhatsApp (works reliably on all devices)
+      window.location.href = waUrl;
 
       onOrderPlaced?.();
     } catch (err: any) {

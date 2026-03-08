@@ -21,7 +21,7 @@ const MyOrdersPage = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("*, editing_styles(name), sizes(name), frame_materials(name), frame_colors(name)")
+        .select("*, editing_styles(name, image_url), sizes(name), frame_materials(name), frame_colors(name)")
         .eq("user_id", user!.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -54,53 +54,67 @@ const MyOrdersPage = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            {orders.map((order) => (
-              <div
-                key={order.id}
-                className="p-4 rounded-2xl border border-border bg-card shadow-sm animate-fade-in"
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs text-muted-foreground">
-                    {new Date(order.created_at).toLocaleDateString("en-IN", {
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric",
-                    })}
-                  </span>
-                  <span
-                    className={`text-xs font-medium px-2.5 py-0.5 rounded-full capitalize ${statusColors[order.status] || "bg-muted text-muted-foreground"}`}
-                  >
-                    {order.status}
-                  </span>
-                </div>
+            {orders.map((order) => {
+              const styleImageUrl = (order as any).editing_styles?.image_url;
+              return (
+                <div
+                  key={order.id}
+                  className="rounded-2xl border border-border bg-card shadow-sm animate-fade-in overflow-hidden"
+                >
+                  {styleImageUrl && (
+                    <div className="w-full h-36 overflow-hidden">
+                      <img
+                        src={styleImageUrl}
+                        alt={(order as any).editing_styles?.name || "Style preview"}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                  <div className="p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(order.created_at).toLocaleDateString("en-IN", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })}
+                      </span>
+                      <span
+                        className={`text-xs font-medium px-2.5 py-0.5 rounded-full capitalize ${statusColors[order.status] || "bg-muted text-muted-foreground"}`}
+                      >
+                        {order.status}
+                      </span>
+                    </div>
 
-                <div className="space-y-1 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Style</span>
-                    <span className="text-foreground font-medium">
-                      {(order as any).editing_styles?.name ?? "—"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Size</span>
-                    <span className="text-foreground font-medium">
-                      {(order as any).sizes?.name ?? "—"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Frame</span>
-                    <span className="text-foreground font-medium">
-                      {(order as any).frame_materials?.name ?? "—"}, {(order as any).frame_colors?.name ?? "—"}
-                    </span>
-                  </div>
-                  <div className="border-t border-border my-2" />
-                  <div className="flex justify-between font-semibold">
-                    <span className="text-foreground">Total</span>
-                    <span className="text-primary">₹{order.total_price}</span>
+                    <div className="space-y-1 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Style</span>
+                        <span className="text-foreground font-medium">
+                          {(order as any).editing_styles?.name ?? "—"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Size</span>
+                        <span className="text-foreground font-medium">
+                          {(order as any).sizes?.name ?? "—"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Frame</span>
+                        <span className="text-foreground font-medium">
+                          {(order as any).frame_materials?.name ?? "—"}, {(order as any).frame_colors?.name ?? "—"}
+                        </span>
+                      </div>
+                      <div className="border-t border-border my-2" />
+                      <div className="flex justify-between font-semibold">
+                        <span className="text-foreground">Total</span>
+                        <span className="text-primary">₹{order.total_price}</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
