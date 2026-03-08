@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { CartProvider } from "@/hooks/useCart";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import BugReportButton from "@/components/BugReportButton";
 import AuthPage from "./pages/AuthPage";
 import Index from "./pages/Index";
 import ConfiguratorPage from "./pages/ConfiguratorPage";
@@ -26,6 +27,7 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner />
+          <BugReportButton />
           <BrowserRouter>
             <Routes>
               <Route path="/auth" element={<AuthPage />} />
