@@ -76,10 +76,10 @@ const ResinConfiguratorPage = () => {
       <Header />
       <div className="container mx-auto px-4 pt-20 max-w-6xl pb-12">
         <button
-          onClick={() => navigate("/")}
+          onClick={() => navigate("/categories")}
           className="text-sm text-muted-foreground hover:text-foreground mb-6 inline-flex items-center gap-1"
         >
-          ← Back to Home
+          ← Back to Categories
         </button>
 
         <div className="mb-8">
