@@ -30,12 +30,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       .eq("user_id", userId)
       .eq("role", "admin")
       .maybeSingle()
-      .then(({ data }) => {
-        setIsAdmin(!!data);
-        setLoading(false);
-      })
-      .catch(() => {
-        setIsAdmin(false);
+      .then(({ data, error }) => {
+        setIsAdmin(!error && !!data);
         setLoading(false);
       });
   };
