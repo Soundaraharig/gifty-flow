@@ -3,11 +3,14 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
+import { useCart } from "@/hooks/useCart";
+import { toast } from "sonner";
 
 const StyleGalleryPage = () => {
   const { styleId } = useParams<{ styleId: string }>();
   const navigate = useNavigate();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const { addItem } = useCart();
 
   const { data: style, isLoading: loadingStyle } = useQuery({
     queryKey: ["editing_style", styleId],
@@ -184,15 +187,41 @@ const StyleGalleryPage = () => {
                 </div>
               </div>
 
-              {/* Buy Now button */}
-              <button
-                onClick={() => navigate(-1)}
-                className="w-full px-8 py-4 rounded-full bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold text-base shadow-rose hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2"
-              >
-                <span className="text-lg">🛒</span>
-                Buy This Style
-              </button>
-            </div>
+              {/* Action buttons */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    addItem({
+                      type: "frame",
+                      name: style?.name || "Custom Frame",
+                      image: style?.image_url || "",
+                      price: style?.price || 0,
+                      quantity: 1,
+                      editingStyleId: styleId!,
+                    });
+                    toast.success(`${style?.name} added to cart!`);
+                  }}
+                  className="flex-1 px-6 py-4 rounded-full border-2 border-primary text-primary font-semibold text-base hover:bg-primary/5 active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2"
+                >
+                  🛒 Add to Cart
+                </button>
+                <button
+                  onClick={() => {
+                    addItem({
+                      type: "frame",
+                      name: style?.name || "Custom Frame",
+                      image: style?.image_url || "",
+                      price: style?.price || 0,
+                      quantity: 1,
+                      editingStyleId: styleId!,
+                    });
+                    navigate("/cart");
+                  }}
+                  className="flex-1 px-6 py-4 rounded-full bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold text-base shadow-rose hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2"
+                >
+                  ⚡ Buy Now
+                </button>
+              </div>
           </div>
         )}
 
