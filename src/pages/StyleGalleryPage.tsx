@@ -204,34 +204,34 @@ const StyleGalleryPage = () => {
         {images.length > 0 &&
         <div className="mt-12">
             
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-              {images.map((img) =>
-            <button
-              key={img.id}
-              onClick={() => {
-                setSelectedImage(img.id);
-                window.scrollTo({ top: 0, behavior: "smooth" });
-              }}
-              className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all duration-200 group ${
-              (selectedImage || images[0]?.id) === img.id ?
-              "border-primary ring-2 ring-primary/30 scale-[1.02]" :
-              "border-border hover:border-primary/40"}`
-              }>
-              
-                  <img
-                src={img.image_url}
-                alt={img.title || style?.name || ""}
-                className="w-full h-full object-cover"
-                loading="lazy" />
-              
-                  {img.title &&
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-foreground/60 to-transparent p-2">
-                      <p className="text-xs text-white font-medium truncate">{img.title}</p>
-                    </div>
-              }
-                </button>
-            )}
-            </div>
+            
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+          
           </div>
         }
       </div>
