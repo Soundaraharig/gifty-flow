@@ -122,7 +122,7 @@ const ConfiguratorPage = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-[auto_1fr_1fr] gap-4 lg:gap-6">
           {/* Left: Vertical Thumbnails (Amazon style) */}
-          <div className="hidden lg:flex flex-col gap-2 sticky top-24 self-start">
+          <div className="hidden lg:flex flex-col gap-2">
             {styles?.map((style: any) => {
               const img = style.image_url || FALLBACK_IMAGES[style.slug];
               return (
