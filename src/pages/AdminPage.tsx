@@ -82,6 +82,7 @@ const AdminPage = () => {
         {tab === "resin" && <AdminResinTypes />}
         {tab === "orders" && <AdminOrders />}
         {tab === "gallery" && <AdminGalleryImages />}
+        {tab === "users" && <AdminUsers />}
         {tab === "settings" && <AdminSettings />}
       </div>
     </div>
