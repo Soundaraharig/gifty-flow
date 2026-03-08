@@ -171,26 +171,6 @@ const ConfiguratorPage = () => {
         </button>
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-4 lg:gap-6">
-          {/* Left: Vertical Thumbnails (Amazon style) */}
-          <div className="hidden lg:flex flex-col gap-2">
-            {styles?.map((style: any) => {
-              const img = style.image_url || FALLBACK_IMAGES[style.slug];
-              return (
-                <button
-                  key={style.id}
-                  onClick={() => handleSelectStyle(style.id)}
-                  className={`w-[58px] h-[58px] rounded-md overflow-hidden border-2 transition-all duration-200 shrink-0 ${
-                  config.editingStyleId === style.id ?
-                  "border-primary ring-2 ring-primary/30" :
-                  "border-border hover:border-primary/40"}`
-                  }>
-                  
-                  {img && <img src={img} alt={style.name} className="w-full h-full object-cover" loading="lazy" />}
-                </button>);
-
-            })}
-          </div>
-
           {/* Big Preview */}
           <div>
             <div className="relative aspect-square rounded-xl overflow-hidden bg-muted border border-border max-w-[480px] group">
@@ -200,7 +180,6 @@ const ConfiguratorPage = () => {
                 src={heroImage}
                 alt={previewStyle?.name || "Select a style"}
                 className="w-full h-full object-cover animate-fade-in" /> :
-
 
               <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                   <div className="text-center">
@@ -212,12 +191,6 @@ const ConfiguratorPage = () => {
               {/* Style name overlay during slideshow */}
               {previewStyle && !userSelected &&
               <div className="absolute bottom-10 left-0 right-0 px-4 animate-fade-in">
-                  
-
-
-
-
-                
                 </div>
               }
               {/* Arrow buttons */}
@@ -231,7 +204,6 @@ const ConfiguratorPage = () => {
                     handleSelectStyle(styles[prevIdx].id);
                   }}
                   className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-card/80 backdrop-blur-sm border border-border flex items-center justify-center text-foreground opacity-0 group-hover:opacity-100 transition-opacity hover:bg-card">
-                  
                     ‹
                   </button>
                   <button
@@ -242,7 +214,6 @@ const ConfiguratorPage = () => {
                     handleSelectStyle(styles[nextIdx].id);
                   }}
                   className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-card/80 backdrop-blur-sm border border-border flex items-center justify-center text-foreground opacity-0 group-hover:opacity-100 transition-opacity hover:bg-card">
-                  
                     ›
                   </button>
                 </>
@@ -256,7 +227,6 @@ const ConfiguratorPage = () => {
                   className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
                   i === slideshowIndex ? "bg-primary w-4" : "bg-foreground/30"}`
                   } />
-
                 )}
                 </div>
               }
@@ -277,12 +247,28 @@ const ConfiguratorPage = () => {
                     "border-primary ring-2 ring-primary/30 scale-105" :
                     "border-border hover:border-primary/40"}`
                     }>
-                    
                     {img && <img src={img} alt={style.name} className="w-full h-full object-cover" loading="lazy" />}
                   </button>);
-
               })}
             </div>
+          </div>
+
+          {/* Vertical Thumbnails (right of preview) */}
+          <div className="hidden lg:flex flex-col gap-2">
+            {styles?.map((style: any) => {
+              const img = style.image_url || FALLBACK_IMAGES[style.slug];
+              return (
+                <button
+                  key={style.id}
+                  onClick={() => handleSelectStyle(style.id)}
+                  className={`w-[58px] h-[58px] rounded-md overflow-hidden border-2 transition-all duration-200 shrink-0 ${
+                  config.editingStyleId === style.id ?
+                  "border-primary ring-2 ring-primary/30" :
+                  "border-border hover:border-primary/40"}`
+                  }>
+                  {img && <img src={img} alt={style.name} className="w-full h-full object-cover" loading="lazy" />}
+                </button>);
+            })}
           </div>
 
           {/* Right: Product Details */}
