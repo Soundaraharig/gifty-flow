@@ -127,15 +127,15 @@ async function fetchColorById(id: string) {
 }
 
 async function fetchAddonsByIds(ids: string[]) {
-  if (ids.length === 0) return [] as Pick<Tables<"addons">, "price">[];
+  if (ids.length === 0) return [] as Pick<Tables<"addons">, "price" | "name">[];
 
   const { data, error } = await withSupabaseTimeout(
-    supabase.from("addons").select("price").in("id", ids),
+    supabase.from("addons").select("price,name").in("id", ids),
     "add-ons",
   );
 
   if (error) throw error;
-  return (data ?? []) as Pick<Tables<"addons">, "price">[];
+  return (data ?? []) as Pick<Tables<"addons">, "price" | "name">[];
 }
 
 export async function fetchCheckoutSummary(config: CheckoutConfig): Promise<CheckoutSummary> {
@@ -159,7 +159,10 @@ export async function fetchCheckoutSummary(config: CheckoutConfig): Promise<Chec
     sizeName: size?.name ?? "N/A",
     sizePrice,
     materialName: material?.name ?? "N/A",
+    materialPrice,
     colorName: color?.name ?? "N/A",
+    addonTotal,
+    addonNames: addons.map((a) => a.name),
   };
 }
 
