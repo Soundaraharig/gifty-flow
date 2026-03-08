@@ -21,7 +21,7 @@ export interface CheckoutSummary {
 
 const QUERY_TIMEOUT_MS = 12000;
 
-async function withSupabaseTimeout<T>(promise: Promise<T>, label: string): Promise<T> {
+async function withSupabaseTimeout<T>(query: PromiseLike<T>, label: string): Promise<T> {
   let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
 
   const timeoutPromise = new Promise<T>((_, reject) => {
@@ -31,38 +31,61 @@ async function withSupabaseTimeout<T>(promise: Promise<T>, label: string): Promi
   });
 
   try {
-    return await Promise.race([promise, timeoutPromise]);
+    return await Promise.race([Promise.resolve(query), timeoutPromise]);
   } finally {
     if (timeoutHandle) clearTimeout(timeoutHandle);
   }
 }
 
-async function fetchActiveRows<T extends keyof Pick<
-  TablesMap,
-  "editing_styles" | "sizes" | "frame_materials" | "frame_colors" | "addons"
->>(table: T): Promise<TablesMap[T][]> {
+export async function fetchActiveEditingStyles(): Promise<Tables<"editing_styles">[]> {
   const { data, error } = await withSupabaseTimeout(
-    supabase.from(table).select("*").eq("is_active", true).order("sort_order"),
-    String(table),
+    supabase.from("editing_styles").select("*").eq("is_active", true).order("sort_order"),
+    "editing styles",
   );
 
   if (error) throw error;
-  return (data ?? []) as TablesMap[T][];
+  return data ?? [];
 }
 
-type TablesMap = {
-  editing_styles: Tables<"editing_styles">;
-  sizes: Tables<"sizes">;
-  frame_materials: Tables<"frame_materials">;
-  frame_colors: Tables<"frame_colors">;
-  addons: Tables<"addons">;
-};
+export async function fetchActiveSizes(): Promise<Tables<"sizes">[]> {
+  const { data, error } = await withSupabaseTimeout(
+    supabase.from("sizes").select("*").eq("is_active", true).order("sort_order"),
+    "sizes",
+  );
 
-export const fetchActiveEditingStyles = () => fetchActiveRows("editing_styles");
-export const fetchActiveSizes = () => fetchActiveRows("sizes");
-export const fetchActiveFrameMaterials = () => fetchActiveRows("frame_materials");
-export const fetchActiveFrameColors = () => fetchActiveRows("frame_colors");
-export const fetchActiveAddons = () => fetchActiveRows("addons");
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function fetchActiveFrameMaterials(): Promise<Tables<"frame_materials">[]> {
+  const { data, error } = await withSupabaseTimeout(
+    supabase.from("frame_materials").select("*").eq("is_active", true).order("sort_order"),
+    "frame materials",
+  );
+
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function fetchActiveFrameColors(): Promise<Tables<"frame_colors">[]> {
+  const { data, error } = await withSupabaseTimeout(
+    supabase.from("frame_colors").select("*").eq("is_active", true).order("sort_order"),
+    "frame colors",
+  );
+
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function fetchActiveAddons(): Promise<Tables<"addons">[]> {
+  const { data, error } = await withSupabaseTimeout(
+    supabase.from("addons").select("*").eq("is_active", true).order("sort_order"),
+    "add-ons",
+  );
+
+  if (error) throw error;
+  return data ?? [];
+}
 
 async function fetchStyleById(id: string) {
   const { data, error } = await withSupabaseTimeout(
