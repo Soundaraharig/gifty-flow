@@ -141,8 +141,13 @@ const CheckoutStep = ({ config, onOrderPlaced }: CheckoutStepProps) => {
         .eq("key", "admin_whatsapp")
         .maybeSingle();
       const adminPhone = (settingRow as any)?.value || "919876543210";
-      const waUrl = `https://wa.me/${adminPhone}?text=${encodeURIComponent(orderText)}`;
-      window.open(waUrl, "_blank");
+      const waUrl = `https://api.whatsapp.com/send?phone=${adminPhone}&text=${encodeURIComponent(orderText)}`;
+      // Use link click to avoid popup blockers / iframe sandbox issues
+      const a = document.createElement("a");
+      a.href = waUrl;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      a.click();
 
       toast({
         title: "Order placed! 🎉",
