@@ -117,11 +117,11 @@ const ResinConfiguratorPage = () => {
       {/* Product Modal */}
       {modalProduct && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm p-4 overflow-y-auto"
           onClick={() => setModalProduct(null)}
         >
           <div
-            className="relative bg-card rounded-2xl border border-border shadow-2xl max-w-md w-full overflow-hidden animate-fade-in"
+            className="relative bg-card rounded-2xl border border-border shadow-2xl max-w-md w-full overflow-hidden animate-fade-in my-auto max-h-[95vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Close button */}
@@ -133,7 +133,7 @@ const ResinConfiguratorPage = () => {
             </button>
 
             {/* Product image */}
-            <div className="aspect-square bg-muted overflow-hidden">
+            <div className="aspect-[4/3] bg-muted overflow-hidden">
               {getImage(modalProduct) ? (
                 <img
                   src={getImage(modalProduct)}

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { fetchCheckoutSummary, type CheckoutConfig } from "@/lib/productQueries";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,6 +21,7 @@ interface SavedAddress {
 
 const CheckoutStep = ({ config, onOrderPlaced }: CheckoutStepProps) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [name, setName] = useState(user?.user_metadata?.full_name || "");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
@@ -299,6 +301,13 @@ const CheckoutStep = ({ config, onOrderPlaced }: CheckoutStepProps) => {
 
         <button onClick={handleOrder} disabled={!isValid || placing} className="w-full mt-4 bg-primary text-primary-foreground py-4 rounded-full font-semibold text-base shadow-rose hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
           {placing ? "Placing Order..." : "🎁 Place Order"}
+        </button>
+
+        <button
+          onClick={() => navigate("/")}
+          className="w-full mt-2 py-3.5 rounded-full border-2 border-primary text-primary font-semibold text-base hover:bg-primary/5 active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2"
+        >
+          🛍️ Shop More
         </button>
       </div>
     </div>
