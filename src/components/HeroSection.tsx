@@ -15,7 +15,7 @@ const HeroSection = () => {
             Custom photo frames, resin art & personalized gifts — crafted uniquely for your loved ones.
           </p>
           <a
-            href="/configure/photo-frames"
+            href="/categories"
             className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-8 py-3.5 rounded-full font-medium text-sm shadow-rose hover:opacity-90 transition-opacity"
           >
             Explore Collection

@@ -16,7 +16,7 @@ const Header = () => {
           </span>
         </a>
         <nav className="flex items-center gap-4">
-          <a href="#categories" className="hidden md:inline text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+          <a href="/categories" className="hidden md:inline text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
             Categories
           </a>
           {isAdmin && (
