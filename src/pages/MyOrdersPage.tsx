@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 import Header from "@/components/Header";
 
 const statusColors: Record<string, string> = {
@@ -11,6 +13,7 @@ const statusColors: Record<string, string> = {
 };
 
 const MyOrdersPage = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
 
   const { data: orders, isLoading } = useQuery({
@@ -31,6 +34,13 @@ const MyOrdersPage = () => {
     <div className="min-h-screen bg-background">
       <Header />
       <div className="container mx-auto px-4 pt-24 max-w-lg pb-12">
+        <button
+          onClick={() => navigate("/configure")}
+          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
+        >
+          <ArrowLeft size={16} />
+          Back to Catalog
+        </button>
         <h1 className="font-display text-3xl font-bold text-foreground mb-6">My Orders</h1>
 
         {isLoading ? (
