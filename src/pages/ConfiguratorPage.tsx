@@ -63,7 +63,7 @@ const ConfiguratorPage = () => {
     intervalRef.current = setInterval(() => {
       setSlideshowIndex((prev) => (prev + 1) % styles.length);
     }, 2500);
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+    return () => {if (intervalRef.current) clearInterval(intervalRef.current);};
   }, [userSelected, styles]);
 
   // Arrow key navigation
@@ -99,12 +99,12 @@ const ConfiguratorPage = () => {
   }, []);
 
   // Determine which style to show in preview
-  const previewStyle = userSelected
-    ? styles?.find((s: any) => s.id === config.editingStyleId)
-    : styles?.[slideshowIndex];
-  const heroImage = previewStyle
-    ? previewStyle.image_url || FALLBACK_IMAGES[previewStyle.slug]
-    : null;
+  const previewStyle = userSelected ?
+  styles?.find((s: any) => s.id === config.editingStyleId) :
+  styles?.[slideshowIndex];
+  const heroImage = previewStyle ?
+  previewStyle.image_url || FALLBACK_IMAGES[previewStyle.slug] :
+  null;
 
   const { data: total = 0 } = useQuery({
     queryKey: ["price_total", config.editingStyleId, config.sizeId, config.frameMaterialId, config.addonIds],
@@ -180,90 +180,90 @@ const ConfiguratorPage = () => {
                   key={style.id}
                   onClick={() => handleSelectStyle(style.id)}
                   className={`w-[58px] h-[58px] rounded-md overflow-hidden border-2 transition-all duration-200 shrink-0 ${
-                    config.editingStyleId === style.id
-                      ? "border-primary ring-2 ring-primary/30"
-                      : "border-border hover:border-primary/40"
-                  }`}
-                >
+                  config.editingStyleId === style.id ?
+                  "border-primary ring-2 ring-primary/30" :
+                  "border-border hover:border-primary/40"}`
+                  }>
+                  
                   {img && <img src={img} alt={style.name} className="w-full h-full object-cover" loading="lazy" />}
-                </button>
-              );
+                </button>);
+
             })}
           </div>
 
           {/* Big Preview */}
           <div>
             <div className="relative aspect-square rounded-xl overflow-hidden bg-muted border border-border max-w-[480px] group">
-              {heroImage ? (
-                <img
-                  key={previewStyle?.id || "empty"}
-                  src={heroImage}
-                  alt={previewStyle?.name || "Select a style"}
-                  className="w-full h-full object-cover animate-fade-in"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+              {heroImage ?
+              <img
+                key={previewStyle?.id || "empty"}
+                src={heroImage}
+                alt={previewStyle?.name || "Select a style"}
+                className="w-full h-full object-cover animate-fade-in" /> :
+
+
+              <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                   <div className="text-center">
                     <div className="text-5xl mb-3">🎨</div>
                     <p className="font-medium">Select a style to preview</p>
                   </div>
                 </div>
-              )}
+              }
               {/* Style name overlay during slideshow */}
-              {previewStyle && !userSelected && (
-                <div className="absolute bottom-10 left-0 right-0 px-4 animate-fade-in">
-                  <div className="bg-foreground/60 backdrop-blur-md rounded-lg px-4 py-2.5 text-center">
-                    <p className="font-display text-sm font-semibold text-primary-foreground">{previewStyle.name}</p>
-                    {previewStyle.description && (
-                      <p className="text-[11px] text-primary-foreground/70 mt-0.5 line-clamp-1">{previewStyle.description}</p>
-                    )}
-                  </div>
+              {previewStyle && !userSelected &&
+              <div className="absolute bottom-10 left-0 right-0 px-4 animate-fade-in">
+                  
+
+
+
+
+                
                 </div>
-              )}
+              }
               {/* Arrow buttons */}
-              {styles && styles.length > 1 && (
-                <>
+              {styles && styles.length > 1 &&
+              <>
                   <button
-                    onClick={() => {
-                      if (!userSelected) setUserSelected(true);
-                      const idx = styles.findIndex((s: any) => s.id === (previewStyle?.id));
-                      const prevIdx = idx > 0 ? idx - 1 : styles.length - 1;
-                      handleSelectStyle(styles[prevIdx].id);
-                    }}
-                    className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-card/80 backdrop-blur-sm border border-border flex items-center justify-center text-foreground opacity-0 group-hover:opacity-100 transition-opacity hover:bg-card"
-                  >
+                  onClick={() => {
+                    if (!userSelected) setUserSelected(true);
+                    const idx = styles.findIndex((s: any) => s.id === previewStyle?.id);
+                    const prevIdx = idx > 0 ? idx - 1 : styles.length - 1;
+                    handleSelectStyle(styles[prevIdx].id);
+                  }}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-card/80 backdrop-blur-sm border border-border flex items-center justify-center text-foreground opacity-0 group-hover:opacity-100 transition-opacity hover:bg-card">
+                  
                     ‹
                   </button>
                   <button
-                    onClick={() => {
-                      if (!userSelected) setUserSelected(true);
-                      const idx = styles.findIndex((s: any) => s.id === (previewStyle?.id));
-                      const nextIdx = idx < styles.length - 1 ? idx + 1 : 0;
-                      handleSelectStyle(styles[nextIdx].id);
-                    }}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-card/80 backdrop-blur-sm border border-border flex items-center justify-center text-foreground opacity-0 group-hover:opacity-100 transition-opacity hover:bg-card"
-                  >
+                  onClick={() => {
+                    if (!userSelected) setUserSelected(true);
+                    const idx = styles.findIndex((s: any) => s.id === previewStyle?.id);
+                    const nextIdx = idx < styles.length - 1 ? idx + 1 : 0;
+                    handleSelectStyle(styles[nextIdx].id);
+                  }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-card/80 backdrop-blur-sm border border-border flex items-center justify-center text-foreground opacity-0 group-hover:opacity-100 transition-opacity hover:bg-card">
+                  
                     ›
                   </button>
                 </>
-              )}
+              }
               {/* Slideshow indicator dots */}
-              {!userSelected && styles && (
-                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
-                  {styles.map((_: any, i: number) => (
-                    <div
-                      key={i}
-                      className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
-                        i === slideshowIndex ? "bg-primary w-4" : "bg-foreground/30"
-                      }`}
-                    />
-                  ))}
+              {!userSelected && styles &&
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+                  {styles.map((_: any, i: number) =>
+                <div
+                  key={i}
+                  className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
+                  i === slideshowIndex ? "bg-primary w-4" : "bg-foreground/30"}`
+                  } />
+
+                )}
                 </div>
-              )}
+              }
             </div>
-            {previewStyle && userSelected && (
-              <p className="text-xs text-muted-foreground mt-2 text-center">{previewStyle.name}</p>
-            )}
+            {previewStyle && userSelected &&
+            <p className="text-xs text-muted-foreground mt-2 text-center">{previewStyle.name}</p>
+            }
             {/* Mobile: horizontal thumbnails */}
             <div className="lg:hidden flex gap-2 mt-3 overflow-x-auto pb-1">
               {styles?.map((style: any) => {
@@ -273,14 +273,14 @@ const ConfiguratorPage = () => {
                     key={style.id}
                     onClick={() => handleSelectStyle(style.id)}
                     className={`shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all duration-200 ${
-                      config.editingStyleId === style.id
-                        ? "border-primary ring-2 ring-primary/30 scale-105"
-                        : "border-border hover:border-primary/40"
-                    }`}
-                  >
+                    config.editingStyleId === style.id ?
+                    "border-primary ring-2 ring-primary/30 scale-105" :
+                    "border-border hover:border-primary/40"}`
+                    }>
+                    
                     {img && <img src={img} alt={style.name} className="w-full h-full object-cover" loading="lazy" />}
-                  </button>
-                );
+                  </button>);
+
               })}
             </div>
           </div>
@@ -343,40 +343,40 @@ const ConfiguratorPage = () => {
                       onClick={() => !isOutOfStock && setConfig((p) => ({ ...p, frameMaterialId: mat.id }))}
                       disabled={isOutOfStock}
                       className={`relative rounded-xl border-2 text-center transition-all duration-200 overflow-hidden ${
-                        isOutOfStock
-                          ? "border-border bg-muted cursor-not-allowed opacity-60"
-                          : config.frameMaterialId === mat.id
-                          ? "border-primary bg-primary/5 shadow-sm"
-                          : "border-border bg-card hover:border-primary/40"
-                      }`}
-                    >
-                      {mat.image_url ? (
-                        <div className="relative">
+                      isOutOfStock ?
+                      "border-border bg-muted cursor-not-allowed opacity-60" :
+                      config.frameMaterialId === mat.id ?
+                      "border-primary bg-primary/5 shadow-sm" :
+                      "border-border bg-card hover:border-primary/40"}`
+                      }>
+                      
+                      {mat.image_url ?
+                      <div className="relative">
                           <img
-                            src={mat.image_url}
-                            alt={mat.name}
-                            className={`w-full h-24 object-cover ${isOutOfStock ? "grayscale blur-[1px]" : ""}`}
-                            loading="lazy"
-                          />
-                          {isOutOfStock && (
-                            <div className="absolute inset-0 bg-foreground/20 flex items-center justify-center">
+                          src={mat.image_url}
+                          alt={mat.name}
+                          className={`w-full h-24 object-cover ${isOutOfStock ? "grayscale blur-[1px]" : ""}`}
+                          loading="lazy" />
+                        
+                          {isOutOfStock &&
+                        <div className="absolute inset-0 bg-foreground/20 flex items-center justify-center">
                               <span className="text-[10px] font-bold text-primary-foreground bg-destructive/80 px-2 py-0.5 rounded-full">
                                 Sold Out
                               </span>
                             </div>
-                          )}
-                        </div>
-                      ) : (
-                        <div className={`w-full h-24 flex items-center justify-center bg-muted ${isOutOfStock ? "grayscale" : ""}`}>
+                        }
+                        </div> :
+
+                      <div className={`w-full h-24 flex items-center justify-center bg-muted ${isOutOfStock ? "grayscale" : ""}`}>
                           <span className="text-2xl">🖼️</span>
                         </div>
-                      )}
+                      }
                       <div className="p-2">
                         <p className="font-medium text-sm text-foreground">{mat.name}</p>
                         {mat.price > 0 && <p className="text-xs text-primary font-semibold">+₹{mat.price}</p>}
                       </div>
-                    </button>
-                  );
+                    </button>);
+
                 })}
               </div>
             </div>
