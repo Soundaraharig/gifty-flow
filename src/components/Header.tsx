@@ -1,12 +1,14 @@
 import logo from "@/assets/logo.png";
 import { useAuth } from "@/hooks/useAuth";
 import { useCart } from "@/hooks/useCart";
+import { useTheme } from "@/hooks/useTheme";
 import { useNavigate } from "react-router-dom";
-import { Shield, LogOut, LogIn, ShoppingCart } from "lucide-react";
+import { Shield, LogOut, LogIn, ShoppingCart, Sun, Moon } from "lucide-react";
 
 const Header = () => {
   const { user, isAdmin, loading, signInWithGoogle, signOut } = useAuth();
   const { totalItems } = useCart();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
   return (
@@ -22,6 +24,13 @@ const Header = () => {
           <a href="/categories" className="hidden md:inline text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
             Categories
           </a>
+          <button
+            onClick={toggleTheme}
+            className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            title={theme === "light" ? "Switch to Dark Mode" : "Switch to Light Mode"}
+          >
+            {theme === "light" ? <Moon size={20} /> : <Sun size={20} />}
+          </button>
           {/* Cart icon */}
           <button
             onClick={() => navigate("/cart")}
