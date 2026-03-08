@@ -319,6 +319,44 @@ export type Database = {
         }
         Relationships: []
       }
+      style_gallery_images: {
+        Row: {
+          created_at: string
+          editing_style_id: string
+          id: string
+          image_url: string
+          is_active: boolean
+          sort_order: number
+          title: string | null
+        }
+        Insert: {
+          created_at?: string
+          editing_style_id: string
+          id?: string
+          image_url: string
+          is_active?: boolean
+          sort_order?: number
+          title?: string | null
+        }
+        Update: {
+          created_at?: string
+          editing_style_id?: string
+          id?: string
+          image_url?: string
+          is_active?: boolean
+          sort_order?: number
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "style_gallery_images_editing_style_id_fkey"
+            columns: ["editing_style_id"]
+            isOneToOne: false
+            referencedRelation: "editing_styles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
