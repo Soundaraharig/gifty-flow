@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import Header from "@/components/Header";
 import { fetchActiveResinTypes, ResinProductType } from "@/lib/resinQueries";
+import { toast } from "sonner";
 
 import resinCoastersImg from "@/assets/resin-coasters.jpg";
 import resinKeychainsImg from "@/assets/resin-keychains.jpg";
@@ -27,8 +28,21 @@ const ResinConfiguratorPage = () => {
     queryFn: fetchActiveResinTypes,
   });
 
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const selected = products?.find((p) => p.id === selectedId);
+  const [modalProduct, setModalProduct] = useState<ResinProductType | null>(null);
+
+  const getImage = (product: ResinProductType) =>
+    product.image_url || FALLBACK_IMAGES[product.slug] || "";
+
+  const handleAddToCart = (product: ResinProductType) => {
+    toast.success(`${product.name} added to cart!`);
+    setModalProduct(null);
+  };
+
+  const handleBuyNow = (product: ResinProductType) => {
+    // TODO: wire up full checkout
+    toast.success(`Proceeding to buy ${product.name}!`);
+    setModalProduct(null);
+  };
 
   if (isLoading) {
     return (
@@ -41,7 +55,7 @@ const ResinConfiguratorPage = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <div className="container mx-auto px-4 pt-20 max-w-6xl">
+      <div className="container mx-auto px-4 pt-20 max-w-6xl pb-12">
         <button
           onClick={() => navigate("/")}
           className="text-sm text-muted-foreground hover:text-foreground mb-6 inline-flex items-center gap-1"
@@ -62,18 +76,13 @@ const ResinConfiguratorPage = () => {
           {products?.map((product) => (
             <button
               key={product.id}
-              onClick={() => setSelectedId(product.id)}
-              className={`group relative rounded-2xl overflow-hidden border-2 text-left transition-all duration-300 bg-card hover:shadow-lg ${
-                selectedId === product.id
-                  ? "border-primary ring-2 ring-primary/20 shadow-lg"
-                  : "border-border hover:border-primary/40"
-              }`}
+              onClick={() => setModalProduct(product)}
+              className="group relative rounded-2xl overflow-hidden border-2 text-left transition-all duration-300 bg-card hover:shadow-lg border-border hover:border-primary/40"
             >
-              {/* Image */}
               <div className="aspect-square bg-muted overflow-hidden">
-                {(product.image_url || FALLBACK_IMAGES[product.slug]) ? (
+                {getImage(product) ? (
                   <img
-                    src={product.image_url || FALLBACK_IMAGES[product.slug]}
+                    src={getImage(product)}
                     alt={product.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     loading="lazy"
@@ -84,8 +93,6 @@ const ResinConfiguratorPage = () => {
                   </div>
                 )}
               </div>
-
-              {/* Info */}
               <div className="p-4">
                 <h3 className="font-display text-lg font-bold text-foreground">
                   {product.name}
@@ -97,59 +104,109 @@ const ResinConfiguratorPage = () => {
                 )}
                 <div className="flex items-center justify-between mt-3">
                   <span className="text-xl font-bold text-primary">₹{product.price}</span>
-                  {selectedId === product.id && (
-                    <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full font-medium">
-                      Selected ✓
-                    </span>
-                  )}
+                  <span className="text-sm text-muted-foreground line-through">
+                    ₹{Math.round(product.price * 1.25)}
+                  </span>
                 </div>
               </div>
             </button>
           ))}
         </div>
+      </div>
 
-        {/* Selected product detail */}
-        {selected && (
-          <div className="mt-10 p-6 rounded-2xl border border-border bg-card max-w-2xl mx-auto">
-            <h2 className="font-display text-2xl font-bold text-foreground mb-2">
-              {selected.name}
-            </h2>
-            <p className="text-muted-foreground mb-4">{selected.description}</p>
+      {/* Product Modal */}
+      {modalProduct && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm p-4"
+          onClick={() => setModalProduct(null)}
+        >
+          <div
+            className="relative bg-card rounded-2xl border border-border shadow-2xl max-w-md w-full overflow-hidden animate-fade-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close button */}
+            <button
+              onClick={() => setModalProduct(null)}
+              className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-card/80 backdrop-blur-sm border border-border flex items-center justify-center text-foreground hover:bg-card transition-colors"
+            >
+              ✕
+            </button>
 
-            <div className="grid grid-cols-3 gap-3 mb-6">
-              <div className="flex flex-col items-center text-center p-3 rounded-xl bg-muted/50">
-                <span className="text-xl mb-1">🚚</span>
-                <p className="text-[11px] font-medium text-foreground">Free Delivery</p>
-                <p className="text-[10px] text-muted-foreground">5-7 days</p>
-              </div>
-              <div className="flex flex-col items-center text-center p-3 rounded-xl bg-muted/50">
-                <span className="text-xl mb-1">🛡️</span>
-                <p className="text-[11px] font-medium text-foreground">Handcrafted</p>
-                <p className="text-[10px] text-muted-foreground">Premium quality</p>
-              </div>
-              <div className="flex flex-col items-center text-center p-3 rounded-xl bg-muted/50">
-                <span className="text-xl mb-1">💝</span>
-                <p className="text-[11px] font-medium text-foreground">Gift Ready</p>
-                <p className="text-[10px] text-muted-foreground">Premium wrap</p>
-              </div>
+            {/* Product image */}
+            <div className="aspect-square bg-muted overflow-hidden">
+              {getImage(modalProduct) ? (
+                <img
+                  src={getImage(modalProduct)}
+                  alt={modalProduct.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <span className="text-6xl">🎨</span>
+                </div>
+              )}
             </div>
 
-            <div className="flex items-center justify-between">
+            {/* Product info */}
+            <div className="p-5 space-y-4">
               <div>
-                <span className="font-display text-3xl font-bold text-foreground">₹{selected.price}</span>
-                <span className="text-sm text-muted-foreground line-through ml-2">
-                  ₹{Math.round(selected.price * 1.25)}
+                <h2 className="font-display text-2xl font-bold text-foreground">
+                  {modalProduct.name}
+                </h2>
+                {modalProduct.description && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {modalProduct.description}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex items-baseline gap-2">
+                <span className="font-display text-3xl font-bold text-foreground">
+                  ₹{modalProduct.price}
+                </span>
+                <span className="text-sm text-muted-foreground line-through">
+                  ₹{Math.round(modalProduct.price * 1.25)}
+                </span>
+                <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium ml-1">
+                  20% OFF
                 </span>
               </div>
-              <button
-                className="px-8 py-3.5 rounded-full bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold text-base shadow-rose hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center gap-2"
-              >
-                <span className="text-lg">🛒</span> Buy Now
-              </button>
+
+              {/* Trust badges */}
+              <div className="grid grid-cols-3 gap-2">
+                <div className="flex flex-col items-center text-center p-2 rounded-xl bg-muted/50">
+                  <span className="text-lg mb-0.5">🚚</span>
+                  <p className="text-[10px] font-medium text-foreground">Free Delivery</p>
+                </div>
+                <div className="flex flex-col items-center text-center p-2 rounded-xl bg-muted/50">
+                  <span className="text-lg mb-0.5">🛡️</span>
+                  <p className="text-[10px] font-medium text-foreground">Handcrafted</p>
+                </div>
+                <div className="flex flex-col items-center text-center p-2 rounded-xl bg-muted/50">
+                  <span className="text-lg mb-0.5">💝</span>
+                  <p className="text-[10px] font-medium text-foreground">Gift Ready</p>
+                </div>
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => handleAddToCart(modalProduct)}
+                  className="flex-1 px-6 py-3.5 rounded-full border-2 border-primary text-primary font-semibold text-base hover:bg-primary/5 active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2"
+                >
+                  <span>🛒</span> Add to Cart
+                </button>
+                <button
+                  onClick={() => handleBuyNow(modalProduct)}
+                  className="flex-1 px-6 py-3.5 rounded-full bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold text-base shadow-rose hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2"
+                >
+                  <span>⚡</span> Buy Now
+                </button>
+              </div>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };
