@@ -4,8 +4,16 @@ import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Minus, Plus, Trash2 } from "lucide-react";
+import { Minus, Plus, Trash2, MapPin, Check } from "lucide-react";
+
+interface SavedAddress {
+  id: string;
+  customer_name: string;
+  customer_phone: string;
+  address: string | null;
+}
 
 const CartPage = () => {
   const navigate = useNavigate();
@@ -19,6 +27,63 @@ const CartPage = () => {
   const [upiId, setUpiId] = useState("");
   const [showUpi, setShowUpi] = useState(false);
 
+  // Address mode
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [mode, setMode] = useState<"loading" | "select" | "new">("loading");
+
+  // Fetch saved addresses
+  const { data: savedAddresses } = useQuery({
+    queryKey: ["customer_addresses", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data } = await supabase
+        .from("customer_addresses")
+        .select("id, customer_name, customer_phone, address")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+      return (data ?? []) as SavedAddress[];
+    },
+    enabled: !!user?.id,
+  });
+
+  // Once addresses load, decide mode
+  useEffect(() => {
+    if (savedAddresses === undefined) return;
+    if (savedAddresses.length > 0) {
+      setMode("select");
+      const first = savedAddresses[0];
+      setSelectedAddressId(first.id);
+      setName(first.customer_name);
+      setPhone(first.customer_phone);
+      setAddress(first.address || "");
+    } else {
+      setMode("new");
+    }
+  }, [savedAddresses]);
+
+  const selectAddress = (addr: SavedAddress) => {
+    setSelectedAddressId(addr.id);
+    setName(addr.customer_name);
+    setPhone(addr.customer_phone);
+    setAddress(addr.address || "");
+  };
+
+  const switchToNew = () => {
+    setMode("new");
+    setSelectedAddressId(null);
+    setName(user?.user_metadata?.full_name || "");
+    setPhone("");
+    setAddress("");
+  };
+
+  const switchToSelect = () => {
+    setMode("select");
+    if (savedAddresses?.length) {
+      selectAddress(savedAddresses[0]);
+    }
+  };
+
+  // Fetch UPI ID
   useEffect(() => {
     supabase
       .from("site_settings" as any)
@@ -35,8 +100,8 @@ const CartPage = () => {
     setPlacing(true);
 
     try {
-      // Save address
-      if (user?.id) {
+      // Save address if new
+      if (mode === "new" && user?.id) {
         await supabase.from("customer_addresses").insert({
           user_id: user.id,
           customer_name: name.trim(),
@@ -117,7 +182,7 @@ const CartPage = () => {
             <span className="text-5xl mb-4 block">🛒</span>
             <p className="text-muted-foreground mb-4">Your cart is empty</p>
             <button
-              onClick={() => navigate("/")}
+              onClick={() => navigate("/categories")}
               className="px-6 py-3 rounded-full bg-primary text-primary-foreground font-semibold hover:opacity-90 transition-opacity"
             >
               🛍️ Shop Now
@@ -200,30 +265,96 @@ const CartPage = () => {
               </div>
             </div>
 
-            {/* Customer details */}
-            <div className="space-y-4 mb-6">
-              <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">Delivery Details</h3>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Your full name"
-                className="w-full px-4 py-3 rounded-xl border border-input bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-              <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="Phone number (e.g. 9876543210)"
-                className="w-full px-4 py-3 rounded-xl border border-input bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-              <textarea
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                placeholder="Delivery address"
-                rows={2}
-                className="w-full px-4 py-3 rounded-xl border border-input bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-              />
+            {/* Address selection mode */}
+            {savedAddresses && savedAddresses.length > 0 && (
+              <div className="flex gap-2 mb-5">
+                <button
+                  onClick={switchToSelect}
+                  className={`flex-1 px-4 py-2.5 rounded-xl text-sm font-medium border transition-all ${
+                    mode === "select"
+                      ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                      : "bg-card text-muted-foreground border-border hover:border-primary/40"
+                  }`}
+                >
+                  <MapPin className="inline-block w-4 h-4 mr-1.5 -mt-0.5" />
+                  Saved Address
+                </button>
+                <button
+                  onClick={switchToNew}
+                  className={`flex-1 px-4 py-2.5 rounded-xl text-sm font-medium border transition-all ${
+                    mode === "new"
+                      ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                      : "bg-card text-muted-foreground border-border hover:border-primary/40"
+                  }`}
+                >
+                  <Plus className="inline-block w-4 h-4 mr-1.5 -mt-0.5" />
+                  New Address
+                </button>
+              </div>
+            )}
+
+            {/* Saved addresses list */}
+            {mode === "select" && savedAddresses && (
+              <div className="space-y-2.5 mb-6">
+                {savedAddresses.map((addr) => (
+                  <button
+                    key={addr.id}
+                    onClick={() => selectAddress(addr)}
+                    className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
+                      selectedAddressId === addr.id
+                        ? "border-primary bg-primary/5 shadow-sm"
+                        : "border-border bg-card hover:border-primary/30"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-foreground text-sm">{addr.customer_name}</p>
+                        <p className="text-muted-foreground text-xs mt-0.5">{addr.customer_phone}</p>
+                        {addr.address && (
+                          <p className="text-muted-foreground text-xs mt-1 line-clamp-2">{addr.address}</p>
+                        )}
+                      </div>
+                      {selectedAddressId === addr.id && (
+                        <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center shrink-0 ml-2 mt-0.5">
+                          <Check className="w-3 h-3 text-primary-foreground" />
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* New address form */}
+            {mode === "new" && (
+              <div className="space-y-4 mb-6">
+                <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">Delivery Details</h3>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Your full name"
+                  className="w-full px-4 py-3 rounded-xl border border-input bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="Phone number (e.g. 9876543210)"
+                  className="w-full px-4 py-3 rounded-xl border border-input bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+                <textarea
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  placeholder="Delivery address"
+                  rows={2}
+                  className="w-full px-4 py-3 rounded-xl border border-input bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+                />
+              </div>
+            )}
+
+            {/* Notes (always visible) */}
+            <div className="mb-6">
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
@@ -287,7 +418,7 @@ const CartPage = () => {
               {placing ? "Placing Order..." : "🎁 Place Order"}
             </button>
             <button
-              onClick={() => navigate("/")}
+              onClick={() => navigate("/categories")}
               className="w-full mt-3 py-3.5 rounded-full border-2 border-primary text-primary font-semibold text-base hover:bg-primary/5 active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2"
             >
               🛍️ Shop More
