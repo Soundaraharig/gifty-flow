@@ -596,6 +596,15 @@ const AdminOrders = () => {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin_orders"] }),
   });
 
+  const deleteOrder = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("orders").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin_orders"] }),
+    onError: (err: any) => alert("Delete failed: " + err.message),
+  });
+
   return (
     <div>
       <h2 className="font-display text-xl font-bold text-foreground mb-4">Orders</h2>
