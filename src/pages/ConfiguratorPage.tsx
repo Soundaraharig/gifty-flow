@@ -7,6 +7,8 @@ import CheckoutStep from "@/components/configurator/CheckoutStep";
 import { useEditingStyles, useSizes, useFrameMaterials } from "@/hooks/useProductData";
 import { useQuery } from "@tanstack/react-query";
 import { fetchCheckoutTotal } from "@/lib/productQueries";
+import { useCart } from "@/hooks/useCart";
+import { toast } from "sonner";
 
 import styleOilPainting from "@/assets/style-oil-painting.jpg";
 import styleMosaicCollage from "@/assets/style-mosaic-collage.jpg";
@@ -38,6 +40,7 @@ interface ConfigState {
 
 const ConfiguratorPage = () => {
   const navigate = useNavigate();
+  const { addItem } = useCart();
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
   const [config, setConfig] = useState<ConfigState>({
@@ -412,18 +415,43 @@ const ConfiguratorPage = () => {
             <span className="text-xs text-muted-foreground line-through">₹{Math.round(total * 1.25)}</span>
             }
           </div>
-          <div className="flex flex-col items-end gap-1">
+          <div className="flex items-center gap-2">
             {!canBuy &&
             <p className="text-[10px] text-destructive font-medium">
                 {!config.editingStyleId ? "Select a style" : !config.sizeId ? "Select a size" : "Select frame material"}
               </p>
             }
+            {canBuy && (
+              <button
+                onClick={() => {
+                  const style = styles?.find((s: any) => s.id === config.editingStyleId);
+                  const size = sizes?.find((s: any) => s.id === config.sizeId);
+                  const mat = materials?.find((m: any) => m.id === config.frameMaterialId);
+                  addItem({
+                    type: "frame",
+                    name: style?.name || "Custom Frame",
+                    image: style?.image_url || FALLBACK_IMAGES[style?.slug || ""] || "",
+                    price: total,
+                    quantity: 1,
+                    editingStyleId: config.editingStyleId!,
+                    sizeId: config.sizeId!,
+                    sizeName: size?.name,
+                    frameMaterialId: config.frameMaterialId!,
+                    materialName: mat?.name,
+                  });
+                  toast.success("Added to cart!");
+                }}
+                className="px-6 py-3.5 rounded-full border-2 border-primary text-primary font-semibold text-sm hover:bg-primary/5 active:scale-[0.98] transition-all duration-200 flex items-center gap-1.5"
+              >
+                🛒 Add to Cart
+              </button>
+            )}
             <button
               onClick={() => setShowCheckout(true)}
               disabled={!canBuy}
               className="relative px-8 py-3.5 rounded-full bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold text-base shadow-rose hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center gap-2">
               
-              <span className="text-lg">🛒</span>
+              <span className="text-lg">⚡</span>
               {canBuy ? "Buy Now" : "Select Options"}
             </button>
           </div>

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import Header from "@/components/Header";
 import { fetchActiveResinTypes, ResinProductType } from "@/lib/resinQueries";
+import { useCart } from "@/hooks/useCart";
 import { toast } from "sonner";
 
 import resinCoastersImg from "@/assets/resin-coasters.jpg";
@@ -29,19 +30,37 @@ const ResinConfiguratorPage = () => {
   });
 
   const [modalProduct, setModalProduct] = useState<ResinProductType | null>(null);
+  const { addItem } = useCart();
 
   const getImage = (product: ResinProductType) =>
     product.image_url || FALLBACK_IMAGES[product.slug] || "";
 
   const handleAddToCart = (product: ResinProductType) => {
+    addItem({
+      type: "resin",
+      name: product.name,
+      image: getImage(product),
+      price: product.price,
+      quantity: 1,
+      resinProductId: product.id,
+      description: product.description || undefined,
+    });
     toast.success(`${product.name} added to cart!`);
     setModalProduct(null);
   };
 
   const handleBuyNow = (product: ResinProductType) => {
-    // TODO: wire up full checkout
-    toast.success(`Proceeding to buy ${product.name}!`);
+    addItem({
+      type: "resin",
+      name: product.name,
+      image: getImage(product),
+      price: product.price,
+      quantity: 1,
+      resinProductId: product.id,
+      description: product.description || undefined,
+    });
     setModalProduct(null);
+    navigate("/cart");
   };
 
   if (isLoading) {
