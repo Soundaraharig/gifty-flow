@@ -268,6 +268,7 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
+          subscriber_phone: string | null
           user_id: string
         }
         Insert: {
@@ -275,6 +276,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          subscriber_phone?: string | null
           user_id: string
         }
         Update: {
@@ -282,6 +284,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          subscriber_phone?: string | null
           user_id?: string
         }
         Relationships: []
@@ -440,6 +443,13 @@ export type Database = {
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      has_role_any: {
+        Args: {
+          _roles: Database["public"]["Enums"]["app_role"][]
           _user_id: string
         }
         Returns: boolean
