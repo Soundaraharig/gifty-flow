@@ -142,7 +142,7 @@ const ConfiguratorPage = () => {
           </div>
 
           {/* Big Preview */}
-          <div className="sticky top-24 self-start">
+          <div>
             <div className="aspect-square rounded-xl overflow-hidden bg-muted border border-border max-w-[480px]">
               {heroImage ? (
                 <img
