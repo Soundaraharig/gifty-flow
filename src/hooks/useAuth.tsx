@@ -23,48 +23,48 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const checkAdmin = async (userId: string) => {
-    try {
-      const result = await Promise.race([
-        supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", userId)
-          .eq("role", "admin")
-          .maybeSingle(),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error("Role check timed out")), 8000)
-        ),
-      ]);
-      setIsAdmin(!!result.data);
-    } catch (e) {
-      console.warn("Admin check failed:", e);
-      setIsAdmin(false);
-    }
+  const checkAdmin = (userId: string) => {
+    supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("role", "admin")
+      .maybeSingle()
+      .then(({ data }) => {
+        setIsAdmin(!!data);
+        setLoading(false);
+      })
+      .catch(() => {
+        setIsAdmin(false);
+        setLoading(false);
+      });
   };
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        const u = session?.user ?? null;
-        setUser(u);
-        if (u) {
-          await checkAdmin(u.id);
-        } else {
-          setIsAdmin(false);
-        }
-        setLoading(false);
-      }
-    );
-
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    // Restore session first
+    supabase.auth.getSession().then(({ data: { session } }) => {
       const u = session?.user ?? null;
       setUser(u);
       if (u) {
-        await checkAdmin(u.id);
+        checkAdmin(u.id);
+      } else {
+        setLoading(false);
       }
-      setLoading(false);
     });
+
+    // Listen for subsequent changes (don't await anything here)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        const u = session?.user ?? null;
+        setUser(u);
+        if (u) {
+          checkAdmin(u.id);
+        } else {
+          setIsAdmin(false);
+          setLoading(false);
+        }
+      }
+    );
 
     return () => subscription.unsubscribe();
   }, []);
