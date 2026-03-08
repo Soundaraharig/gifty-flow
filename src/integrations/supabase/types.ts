@@ -120,29 +120,35 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          image_url: string | null
           is_active: boolean
           name: string
           price: number
           slug: string
           sort_order: number
+          stock: number
         }
         Insert: {
           created_at?: string
           id?: string
+          image_url?: string | null
           is_active?: boolean
           name: string
           price?: number
           slug: string
           sort_order?: number
+          stock?: number
         }
         Update: {
           created_at?: string
           id?: string
+          image_url?: string | null
           is_active?: boolean
           name?: string
           price?: number
           slug?: string
           sort_order?: number
+          stock?: number
         }
         Relationships: []
       }

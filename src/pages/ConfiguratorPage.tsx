@@ -322,21 +322,50 @@ const ConfiguratorPage = () => {
               <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider mb-3">
                 Frame Material
               </h3>
-              <div className="flex gap-3 flex-wrap">
-                {materials?.map((mat) =>
-                <button
-                  key={mat.id}
-                  onClick={() => setConfig((p) => ({ ...p, frameMaterialId: mat.id }))}
-                  className={`px-5 py-3 rounded-xl border-2 text-center transition-all duration-200 min-w-[100px] ${
-                  config.frameMaterialId === mat.id ?
-                  "border-primary bg-primary/5 shadow-sm" :
-                  "border-border bg-card hover:border-primary/40"}`
-                  }>
-                  
-                    <p className="font-medium text-foreground">{mat.name}</p>
-                    {mat.price > 0 && <p className="text-xs text-primary font-semibold mt-0.5">+₹{mat.price}</p>}
-                  </button>
-                )}
+              <div className="grid grid-cols-3 gap-3">
+                {materials?.map((mat: any) => {
+                  const isOutOfStock = mat.stock === 0;
+                  return (
+                    <button
+                      key={mat.id}
+                      onClick={() => !isOutOfStock && setConfig((p) => ({ ...p, frameMaterialId: mat.id }))}
+                      disabled={isOutOfStock}
+                      className={`relative rounded-xl border-2 text-center transition-all duration-200 overflow-hidden ${
+                        isOutOfStock
+                          ? "border-border bg-muted cursor-not-allowed opacity-60"
+                          : config.frameMaterialId === mat.id
+                          ? "border-primary bg-primary/5 shadow-sm"
+                          : "border-border bg-card hover:border-primary/40"
+                      }`}
+                    >
+                      {mat.image_url ? (
+                        <div className="relative">
+                          <img
+                            src={mat.image_url}
+                            alt={mat.name}
+                            className={`w-full h-24 object-cover ${isOutOfStock ? "grayscale blur-[1px]" : ""}`}
+                            loading="lazy"
+                          />
+                          {isOutOfStock && (
+                            <div className="absolute inset-0 bg-foreground/20 flex items-center justify-center">
+                              <span className="text-[10px] font-bold text-primary-foreground bg-destructive/80 px-2 py-0.5 rounded-full">
+                                Sold Out
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className={`w-full h-24 flex items-center justify-center bg-muted ${isOutOfStock ? "grayscale" : ""}`}>
+                          <span className="text-2xl">🖼️</span>
+                        </div>
+                      )}
+                      <div className="p-2">
+                        <p className="font-medium text-sm text-foreground">{mat.name}</p>
+                        {mat.price > 0 && <p className="text-xs text-primary font-semibold">+₹{mat.price}</p>}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
