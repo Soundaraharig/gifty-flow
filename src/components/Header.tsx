@@ -2,10 +2,10 @@ import logo from "@/assets/logo.png";
 import { useAuth } from "@/hooks/useAuth";
 import { useCart } from "@/hooks/useCart";
 import { useNavigate } from "react-router-dom";
-import { Shield, LogOut, LogIn, ShoppingCart } from "lucide-react";
+import { Shield, LogOut, LogIn, ShoppingCart, Crown } from "lucide-react";
 
 const Header = () => {
-  const { user, isAdmin, loading, signInWithGoogle, signOut } = useAuth();
+  const { user, isAdmin, isSubscriber, loading, signInWithGoogle, signOut } = useAuth();
   const { totalItems } = useCart();
   const navigate = useNavigate();
 
@@ -35,13 +35,24 @@ const Header = () => {
               </span>
             )}
           </button>
-          {isAdmin && (
+          {/* Subscribe button for non-subscribers */}
+          {!isAdmin && !isSubscriber && user && (
+            <button
+              onClick={() => navigate("/subscribe")}
+              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-accent text-accent-foreground text-xs font-medium hover:opacity-90 transition-opacity"
+              title="Subscribe"
+            >
+              <Crown size={14} />
+              Subscribe
+            </button>
+          )}
+          {(isAdmin || isSubscriber) && (
             <button
               onClick={() => navigate("/admin")}
               className="p-2 rounded-full text-primary hover:bg-primary/10 transition-colors"
-              title="Admin Dashboard"
+              title={isAdmin ? "Admin Dashboard" : "Subscriber Dashboard"}
             >
-              <Shield size={20} />
+              {isAdmin ? <Shield size={20} /> : <Crown size={20} />}
             </button>
           )}
           {loading ? null : user ? (

@@ -30,12 +30,15 @@ const AdminPage = () => {
     );
   }
 
-  if (!isAdmin) {
+  if (!isAdmin && !isSubscriber) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-background">
-        <p className="text-destructive font-semibold">Access denied. Admins only.</p>
+        <p className="text-destructive font-semibold">Access denied.</p>
         <p className="text-sm text-muted-foreground">Signed in as {user.email}</p>
-        <button onClick={() => navigate("/")} className="text-primary underline">Go Home</button>
+        <div className="flex gap-3">
+          <button onClick={() => navigate("/subscribe")} className="px-4 py-2 rounded-full bg-primary text-primary-foreground text-sm font-medium">Subscribe</button>
+          <button onClick={() => navigate("/")} className="text-primary underline text-sm">Go Home</button>
+        </div>
       </div>
     );
   }
