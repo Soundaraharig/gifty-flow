@@ -154,7 +154,7 @@ const ConfiguratorPage = () => {
             
             ← Back to customization
           </button>
-          <CheckoutStep config={config} onOrderPlaced={() => setOrderPlaced(true)} />
+          <CheckoutStep config={config} selectedGalleryImage={config.selectedGalleryImage} onOrderPlaced={() => setOrderPlaced(true)} />
         </div>
       </div>);
 
