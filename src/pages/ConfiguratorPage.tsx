@@ -159,9 +159,6 @@ const ConfiguratorPage = () => {
                 </div>
               )}
             </div>
-            {selectedStyle && (
-              <p className="text-sm text-primary mt-3 cursor-pointer hover:underline text-center">Click to see full view</p>
-            )}
             {/* Mobile: horizontal thumbnails */}
             <div className="lg:hidden flex gap-2 mt-3 overflow-x-auto pb-1">
               {styles?.map((style: any) => {
