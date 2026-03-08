@@ -40,7 +40,6 @@ const ConfiguratorPage = () => {
   const navigate = useNavigate();
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
-  const [showGallery, setShowGallery] = useState(false);
   const [config, setConfig] = useState<ConfigState>({
     editingStyleId: null,
     sizeId: null,
