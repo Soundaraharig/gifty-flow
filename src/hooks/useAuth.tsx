@@ -24,13 +24,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   const checkAdmin = async (userId: string) => {
-    const { data } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId)
-      .eq("role", "admin")
-      .maybeSingle();
-    setIsAdmin(!!data);
+    try {
+      const result = await Promise.race([
+        supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", userId)
+          .eq("role", "admin")
+          .maybeSingle(),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("Role check timed out")), 8000)
+        ),
+      ]);
+      setIsAdmin(!!result.data);
+    } catch (e) {
+      console.warn("Admin check failed:", e);
+      setIsAdmin(false);
+    }
   };
 
   useEffect(() => {
