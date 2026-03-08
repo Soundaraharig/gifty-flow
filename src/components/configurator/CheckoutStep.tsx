@@ -9,6 +9,7 @@ import { MapPin, Plus, Check } from "lucide-react";
 
 interface CheckoutStepProps {
   config: CheckoutConfig;
+  selectedGalleryImage?: string | null;
   onOrderPlaced?: () => void;
 }
 
@@ -19,7 +20,7 @@ interface SavedAddress {
   address: string | null;
 }
 
-const CheckoutStep = ({ config, onOrderPlaced }: CheckoutStepProps) => {
+const CheckoutStep = ({ config, selectedGalleryImage, onOrderPlaced }: CheckoutStepProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [name, setName] = useState(user?.user_metadata?.full_name || "");
@@ -123,9 +124,9 @@ const CheckoutStep = ({ config, onOrderPlaced }: CheckoutStepProps) => {
 
       if (error) throw error;
 
-      // Fetch editing style image URL
-      let styleImageUrl: string | null = null;
-      if (config.editingStyleId) {
+      // Use gallery-selected image if available, otherwise fetch style image
+      let styleImageUrl: string | null = selectedGalleryImage || null;
+      if (!styleImageUrl && config.editingStyleId) {
         const { data: styleData } = await supabase
           .from("editing_styles")
           .select("image_url")
