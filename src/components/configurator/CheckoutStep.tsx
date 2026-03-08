@@ -262,13 +262,38 @@ const CheckoutStep = ({ config, onOrderPlaced }: CheckoutStepProps) => {
         </div>
 
         <div className="mt-6 p-4 rounded-xl bg-muted/50 border border-border">
-          <h3 className="text-sm font-semibold text-foreground mb-3 uppercase tracking-wider">Order Summary</h3>
-          <div className="space-y-1.5 text-sm">
-            <div className="flex justify-between"><span className="text-muted-foreground">Size</span><span className="text-foreground">{summary?.sizeName} — ₹{summary?.sizePrice}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Style</span><span className="text-foreground">{summary?.styleName} — ₹{summary?.stylePrice}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Frame</span><span className="text-foreground">{summary?.materialName}</span></div>
+          <h3 className="text-sm font-semibold text-foreground mb-3 uppercase tracking-wider">Price Breakdown</h3>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">🎨 Editing Style</span>
+              <span className="text-foreground">{summary?.styleName} — ₹{summary?.stylePrice ?? 0}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">📐 Print Size</span>
+              <span className="text-foreground">{summary?.sizeName} — ₹{summary?.sizePrice ?? 0}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">🖼 Frame</span>
+              <span className="text-foreground">
+                {summary?.materialName}
+                {(summary?.materialPrice ?? 0) > 0 ? ` — ₹${summary?.materialPrice}` : " — Free"}
+              </span>
+            </div>
+            {(summary?.addonTotal ?? 0) > 0 && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">✨ Add-ons</span>
+                <span className="text-foreground">{summary?.addonNames?.join(", ")} — ₹{summary?.addonTotal}</span>
+              </div>
+            )}
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">🚚 Shipping</span>
+              <span className="text-foreground text-green-600 dark:text-green-400">Free</span>
+            </div>
             <div className="border-t border-border my-2" />
-            <div className="flex justify-between font-semibold text-base"><span className="text-foreground">Total</span><span className="text-primary">₹{summary?.total}</span></div>
+            <div className="flex justify-between font-semibold text-base">
+              <span className="text-foreground">Total</span>
+              <span className="text-primary text-lg">₹{summary?.total ?? 0}</span>
+            </div>
           </div>
         </div>
 
