@@ -35,7 +35,7 @@ const MyOrdersPage = () => {
       <Header />
       <div className="container mx-auto px-4 pt-24 max-w-lg pb-12">
         <button
-          onClick={() => navigate("/configure")}
+          onClick={() => navigate("/categories")}
           className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
         >
           <ArrowLeft size={16} />
