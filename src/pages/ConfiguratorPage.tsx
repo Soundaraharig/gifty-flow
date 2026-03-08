@@ -170,7 +170,7 @@ const ConfiguratorPage = () => {
           ← Back to Home
         </button>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[auto_1fr_1fr] gap-4 lg:gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-4 lg:gap-6">
           {/* Left: Vertical Thumbnails (Amazon style) */}
           <div className="hidden lg:flex flex-col gap-2">
             {styles?.map((style: any) => {
