@@ -16,7 +16,10 @@ export interface CheckoutSummary {
   sizeName: string;
   sizePrice: number;
   materialName: string;
+  materialPrice: number;
   colorName: string;
+  addonTotal: number;
+  addonNames: string[];
 }
 
 const QUERY_TIMEOUT_MS = 12000;
