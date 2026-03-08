@@ -5,7 +5,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Header from "@/components/Header";
 
-type Tab = "styles" | "sizes" | "materials" | "orders" | "gallery" | "resin" | "settings";
+import AdminUsers from "@/components/admin/AdminUsers";
+
+type Tab = "styles" | "sizes" | "materials" | "orders" | "gallery" | "resin" | "settings" | "users";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
@@ -45,6 +47,7 @@ const AdminPage = () => {
     { id: "resin", label: "Resin Types" },
     { id: "orders", label: "Orders" },
     { id: "gallery", label: "Gallery Images" },
+    { id: "users", label: "Users" },
     { id: "settings", label: "Settings" },
   ];
 
@@ -79,6 +82,7 @@ const AdminPage = () => {
         {tab === "resin" && <AdminResinTypes />}
         {tab === "orders" && <AdminOrders />}
         {tab === "gallery" && <AdminGalleryImages />}
+        {tab === "users" && <AdminUsers />}
         {tab === "settings" && <AdminSettings />}
       </div>
     </div>
