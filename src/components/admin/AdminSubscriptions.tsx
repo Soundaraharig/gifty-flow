@@ -35,12 +35,26 @@ const AdminSubscriptions = () => {
         .eq("id", req.id);
       if (updateErr) throw updateErr;
 
-      // Update user role to subscriber
-      const { error: roleErr } = await supabase
+      // Ensure user has subscriber role (create row if missing)
+      const { data: existingRole, error: roleFetchErr } = await supabase
         .from("user_roles")
-        .update({ role: "subscriber" } as any)
-        .eq("user_id", req.user_id);
-      if (roleErr) throw roleErr;
+        .select("id")
+        .eq("user_id", req.user_id)
+        .maybeSingle();
+      if (roleFetchErr) throw roleFetchErr;
+
+      if (existingRole?.id) {
+        const { error: roleUpdateErr } = await supabase
+          .from("user_roles")
+          .update({ role: "subscriber" } as any)
+          .eq("id", existingRole.id);
+        if (roleUpdateErr) throw roleUpdateErr;
+      } else {
+        const { error: roleInsertErr } = await supabase
+          .from("user_roles")
+          .insert({ user_id: req.user_id, role: "subscriber" } as any);
+        if (roleInsertErr) throw roleInsertErr;
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin_subscription_requests"] });
