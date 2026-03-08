@@ -639,7 +639,15 @@ const AdminOrders = () => {
               <p className="text-xs text-muted-foreground mt-2">
                 {order.editing_styles?.name} • {order.sizes?.name} • {order.frame_materials?.name} / {order.frame_colors?.name}
               </p>
-              <p className="text-xs text-muted-foreground">{new Date(order.created_at).toLocaleString()}</p>
+              <div className="flex justify-between items-center mt-2">
+                <p className="text-xs text-muted-foreground">{new Date(order.created_at).toLocaleString()}</p>
+                <button
+                  onClick={() => { if (confirm("Delete this order permanently?")) deleteOrder.mutate(order.id); }}
+                  className="text-xs text-destructive hover:underline"
+                >
+                  Delete
+                </button>
+              </div>
             </div>
           ))}
         </div>
