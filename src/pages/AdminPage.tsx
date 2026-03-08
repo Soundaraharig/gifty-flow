@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Header from "@/components/Header";
 
-type Tab = "styles" | "sizes" | "materials" | "orders" | "gallery" | "settings";
+type Tab = "styles" | "sizes" | "materials" | "orders" | "gallery" | "resin" | "settings";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
