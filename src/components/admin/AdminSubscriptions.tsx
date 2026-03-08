@@ -1,10 +1,12 @@
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { CheckCircle, XCircle, Clock, ExternalLink } from "lucide-react";
+import { CheckCircle, XCircle, Clock, ExternalLink, Trash2, Eye, ChevronDown } from "lucide-react";
 
 const AdminSubscriptions = () => {
   const qc = useQueryClient();
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const { data: requests = [], isLoading } = useQuery({
     queryKey: ["admin_subscription_requests"],
@@ -28,14 +30,12 @@ const AdminSubscriptions = () => {
 
   const approveMutation = useMutation({
     mutationFn: async (req: any) => {
-      // Update request status
       const { error: updateErr } = await supabase
         .from("subscription_requests" as any)
         .update({ status: "approved", reviewed_at: new Date().toISOString() } as any)
         .eq("id", req.id);
       if (updateErr) throw updateErr;
 
-      // Ensure user has subscriber role (create row if missing)
       const { data: existingRole, error: roleFetchErr } = await supabase
         .from("user_roles")
         .select("id")
@@ -79,6 +79,30 @@ const AdminSubscriptions = () => {
     onError: (err: any) => toast.error("Failed: " + err.message),
   });
 
+  const revokeMutation = useMutation({
+    mutationFn: async (req: any) => {
+      // Revert role back to 'user'
+      const { error: roleErr } = await supabase
+        .from("user_roles")
+        .update({ role: "user" } as any)
+        .eq("user_id", req.user_id);
+      if (roleErr) throw roleErr;
+
+      // Update request status to 'revoked'
+      const { error: reqErr } = await supabase
+        .from("subscription_requests" as any)
+        .update({ status: "revoked", reviewed_at: new Date().toISOString() } as any)
+        .eq("id", req.id);
+      if (reqErr) throw reqErr;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin_subscription_requests"] });
+      qc.invalidateQueries({ queryKey: ["admin_users"] });
+      toast.success("Subscription revoked. User is back to normal.");
+    },
+    onError: (err: any) => toast.error("Failed: " + err.message),
+  });
+
   const getProfile = (userId: string) => profiles.find((p) => p.user_id === userId);
 
   if (isLoading) return <p className="text-muted-foreground text-sm">Loading...</p>;
@@ -103,8 +127,8 @@ const AdminSubscriptions = () => {
           <p className="text-xs text-muted-foreground">Approved</p>
         </div>
         <div className="p-3 rounded-xl border border-border bg-card text-center">
-          <p className="text-2xl font-bold text-destructive">{requests.filter((r: any) => r.status === "rejected").length}</p>
-          <p className="text-xs text-muted-foreground">Rejected</p>
+          <p className="text-2xl font-bold text-destructive">{requests.filter((r: any) => r.status === "rejected" || r.status === "revoked").length}</p>
+          <p className="text-xs text-muted-foreground">Rejected/Revoked</p>
         </div>
       </div>
 
@@ -132,25 +156,14 @@ const AdminSubscriptions = () => {
                       <p className="text-xs text-muted-foreground">{new Date(req.created_at).toLocaleString()}</p>
                     </div>
                   </div>
-                  {/* Screenshot */}
                   <div className="mt-3">
                     <a href={req.screenshot_url} target="_blank" rel="noopener noreferrer" className="block">
-                      <img
-                        src={req.screenshot_url}
-                        alt="Payment screenshot"
-                        className="w-full max-h-48 object-contain rounded-lg border border-border bg-background"
-                      />
+                      <img src={req.screenshot_url} alt="Payment screenshot" className="w-full max-h-48 object-contain rounded-lg border border-border bg-background" />
                     </a>
-                    <a
-                      href={req.screenshot_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-primary hover:underline flex items-center gap-1 mt-1"
-                    >
+                    <a href={req.screenshot_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline flex items-center gap-1 mt-1">
                       <ExternalLink size={10} /> View full image
                     </a>
                   </div>
-                  {/* Actions */}
                   <div className="flex gap-2 mt-3">
                     <button
                       onClick={() => approveMutation.mutate(req)}
@@ -174,33 +187,86 @@ const AdminSubscriptions = () => {
         </div>
       )}
 
-      {/* Reviewed */}
+      {/* Reviewed / History with expandable screenshot */}
       {reviewed.length > 0 && (
         <div>
           <h3 className="text-sm font-semibold text-foreground mb-3">History</h3>
           <div className="space-y-2">
             {reviewed.map((req: any) => {
               const profile = getProfile(req.user_id);
+              const isExpanded = expandedId === req.id;
+              const statusColor =
+                req.status === "approved"
+                  ? "bg-primary/10 text-primary"
+                  : "bg-destructive/10 text-destructive";
+
               return (
-                <div key={req.id} className="flex items-center gap-3 p-3 rounded-xl border border-border bg-card">
-                  <div className="w-8 h-8 rounded-full bg-muted overflow-hidden shrink-0">
-                    {profile?.avatar_url ? (
-                      <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">?</div>
-                    )}
+                <div key={req.id} className="rounded-xl border border-border bg-card overflow-hidden">
+                  {/* Summary row */}
+                  <div
+                    className="flex items-center gap-3 p-3 cursor-pointer hover:bg-muted/30 transition-colors"
+                    onClick={() => setExpandedId(isExpanded ? null : req.id)}
+                  >
+                    <div className="w-8 h-8 rounded-full bg-muted overflow-hidden shrink-0">
+                      {profile?.avatar_url ? (
+                        <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">?</div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{profile?.display_name || "Unknown"}</p>
+                      <p className="text-xs text-muted-foreground">{new Date(req.created_at).toLocaleDateString()}</p>
+                    </div>
+                    <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${statusColor}`}>
+                      {req.status}
+                    </span>
+                    <ChevronDown size={16} className={`text-muted-foreground transition-transform ${isExpanded ? "rotate-180" : ""}`} />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{profile?.display_name || "Unknown"}</p>
-                    <p className="text-xs text-muted-foreground">{new Date(req.created_at).toLocaleDateString()}</p>
-                  </div>
-                  <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${
-                    req.status === "approved"
-                      ? "bg-primary/10 text-primary"
-                      : "bg-destructive/10 text-destructive"
-                  }`}>
-                    {req.status}
-                  </span>
+
+                  {/* Expanded details */}
+                  {isExpanded && (
+                    <div className="px-4 pb-4 border-t border-border/50 bg-muted/10">
+                      {/* Screenshot */}
+                      <div className="mt-3">
+                        <p className="text-xs font-medium text-muted-foreground mb-2">Payment Screenshot</p>
+                        <a href={req.screenshot_url} target="_blank" rel="noopener noreferrer" className="block">
+                          <img src={req.screenshot_url} alt="Payment proof" className="w-full max-h-64 object-contain rounded-lg border border-border bg-background" />
+                        </a>
+                        <a href={req.screenshot_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline flex items-center gap-1 mt-1">
+                          <ExternalLink size={10} /> View full image
+                        </a>
+                      </div>
+
+                      {/* Details */}
+                      <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                        <div>
+                          <span className="font-medium">Submitted:</span>{" "}
+                          {new Date(req.created_at).toLocaleString()}
+                        </div>
+                        {req.reviewed_at && (
+                          <div>
+                            <span className="font-medium">Reviewed:</span>{" "}
+                            {new Date(req.reviewed_at).toLocaleString()}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Revoke button for approved subscriptions */}
+                      {req.status === "approved" && (
+                        <button
+                          onClick={() => {
+                            if (confirm(`Revoke subscription for ${profile?.display_name || "this user"}? They will lose subscriber access.`))
+                              revokeMutation.mutate(req);
+                          }}
+                          disabled={revokeMutation.isPending}
+                          className="mt-3 w-full flex items-center justify-center gap-1.5 px-4 py-2 rounded-full border border-destructive/30 text-destructive text-sm font-medium disabled:opacity-50 hover:bg-destructive/5 transition-colors"
+                        >
+                          <Trash2 size={14} /> Revoke Subscription
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             })}
