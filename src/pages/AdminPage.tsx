@@ -47,6 +47,7 @@ const AdminPage = () => {
     { id: "resin", label: "Resin Types" },
     { id: "orders", label: "Orders" },
     { id: "gallery", label: "Gallery Images" },
+    { id: "users", label: "Users" },
     { id: "settings", label: "Settings" },
   ];
 
