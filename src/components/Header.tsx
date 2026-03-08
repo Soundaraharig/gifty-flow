@@ -1,10 +1,12 @@
 import logo from "@/assets/logo.png";
 import { useAuth } from "@/hooks/useAuth";
+import { useCart } from "@/hooks/useCart";
 import { useNavigate } from "react-router-dom";
-import { Shield, LogOut, LogIn } from "lucide-react";
+import { Shield, LogOut, LogIn, ShoppingCart } from "lucide-react";
 
 const Header = () => {
   const { user, isAdmin, loading, signInWithGoogle, signOut } = useAuth();
+  const { totalItems } = useCart();
   const navigate = useNavigate();
 
   return (
@@ -20,6 +22,19 @@ const Header = () => {
           <a href="/categories" className="hidden md:inline text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
             Categories
           </a>
+          {/* Cart icon */}
+          <button
+            onClick={() => navigate("/cart")}
+            className="relative p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            title="Cart"
+          >
+            <ShoppingCart size={20} />
+            {totalItems > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
+                {totalItems > 9 ? "9+" : totalItems}
+              </span>
+            )}
+          </button>
           {isAdmin && (
             <button
               onClick={() => navigate("/admin")}
