@@ -406,6 +406,18 @@ const CartPage = () => {
                         Copy
                       </button>
                     </div>
+                    {upiQrImage && (
+                      <div className="flex flex-col items-center gap-2 py-2">
+                        <img src={upiQrImage} alt="UPI QR Code" className="w-48 h-48 rounded-lg border border-border object-contain bg-white" />
+                        <a
+                          href={upiQrImage}
+                          download="upi-qr-code.png"
+                          className="text-xs text-primary font-medium hover:underline"
+                        >
+                          📥 Download QR Code
+                        </a>
+                      </div>
+                    )}
                     <a
                       href={`upi://pay?pa=${encodeURIComponent(upiId)}&am=${totalPrice}&cu=INR`}
                       className="block w-full text-center py-2.5 rounded-lg bg-accent text-accent-foreground font-medium text-sm hover:opacity-90 transition-opacity"
