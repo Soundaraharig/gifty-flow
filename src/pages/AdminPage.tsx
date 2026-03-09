@@ -889,11 +889,18 @@ const AdminSettings = () => {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const rows = SETTINGS_FIELDS.map((f) => ({
-        key: f.key,
-        value: (values[f.key] ?? "").trim(),
-        updated_at: new Date().toISOString(),
-      }));
+      const rows = [
+        ...SETTINGS_FIELDS.map((f) => ({
+          key: f.key,
+          value: (values[f.key] ?? "").trim(),
+          updated_at: new Date().toISOString(),
+        })),
+        {
+          key: "upi_qr_image",
+          value: (values["upi_qr_image"] ?? "").trim(),
+          updated_at: new Date().toISOString(),
+        },
+      ];
       const { error } = await supabase
         .from("site_settings" as any)
         .upsert(rows as any, { onConflict: "key" });
