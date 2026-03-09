@@ -925,8 +925,35 @@ const AdminSettings = () => {
             <p className="text-xs text-muted-foreground mt-1">{f.hint}</p>
           </div>
         ))}
+
+        {/* UPI QR Code Image Upload */}
+        <div>
+          <label className="text-xs text-muted-foreground mb-1 block">UPI QR Code Image</label>
+          <ImageUploadField
+            value={values["upi_qr_image"] || ""}
+            onChange={(url) => setValues((prev) => ({ ...prev, upi_qr_image: url }))}
+            folder="settings"
+          />
+          <p className="text-xs text-muted-foreground mt-1">Upload a QR code image for UPI payments. Customers can download and scan it.</p>
+        </div>
+
         <button
-          onClick={() => saveMutation.mutate()}
+          onClick={() => {
+            // Include upi_qr_image in the save
+            const rows = [
+              ...SETTINGS_FIELDS.map((f) => ({
+                key: f.key,
+                value: (values[f.key] ?? "").trim(),
+                updated_at: new Date().toISOString(),
+              })),
+              {
+                key: "upi_qr_image",
+                value: (values["upi_qr_image"] ?? "").trim(),
+                updated_at: new Date().toISOString(),
+              },
+            ];
+            saveMutation.mutate();
+          }}
           disabled={saveMutation.isPending}
           className="px-5 py-2 rounded-full bg-primary text-primary-foreground text-sm font-medium disabled:opacity-50"
         >
