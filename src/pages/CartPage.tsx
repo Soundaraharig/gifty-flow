@@ -25,6 +25,7 @@ const CartPage = () => {
   const [address, setAddress] = useState("");
   const [notes, setNotes] = useState("");
   const [upiId, setUpiId] = useState("");
+  const [upiQrImage, setUpiQrImage] = useState("");
   const [showUpi, setShowUpi] = useState(false);
   const [paidViaUpi, setPaidViaUpi] = useState(false);
 

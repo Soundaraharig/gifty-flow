@@ -32,6 +32,7 @@ const CheckoutStep = ({ config, selectedGalleryImage, onOrderPlaced }: CheckoutS
   const [notes, setNotes] = useState("");
   const [placing, setPlacing] = useState(false);
   const [upiId, setUpiId] = useState("");
+  const [upiQrImage, setUpiQrImage] = useState("");
   const [showUpi, setShowUpi] = useState(false);
 
   // Fetch UPI ID
