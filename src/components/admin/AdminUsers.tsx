@@ -25,6 +25,7 @@ const AdminUsers = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
 
   const { data: users = [], isLoading } = useQuery({
     queryKey: ["admin_users"],
