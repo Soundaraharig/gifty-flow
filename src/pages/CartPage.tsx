@@ -25,6 +25,7 @@ const CartPage = () => {
   const [address, setAddress] = useState("");
   const [notes, setNotes] = useState("");
   const [upiId, setUpiId] = useState("");
+  const [upiQrImage, setUpiQrImage] = useState("");
   const [showUpi, setShowUpi] = useState(false);
   const [paidViaUpi, setPaidViaUpi] = useState(false);
 
@@ -84,7 +85,7 @@ const CartPage = () => {
     }
   };
 
-  // Fetch UPI ID
+  // Fetch UPI ID & QR
   useEffect(() => {
     supabase
       .from("site_settings" as any)
@@ -93,6 +94,14 @@ const CartPage = () => {
       .maybeSingle()
       .then(({ data }) => {
         if ((data as any)?.value) setUpiId((data as any).value);
+      });
+    supabase
+      .from("site_settings" as any)
+      .select("value")
+      .eq("key", "upi_qr_image")
+      .maybeSingle()
+      .then(({ data }) => {
+        if ((data as any)?.value) setUpiQrImage((data as any).value);
       });
   }, []);
 
@@ -397,6 +406,18 @@ const CartPage = () => {
                         Copy
                       </button>
                     </div>
+                    {upiQrImage && (
+                      <div className="flex flex-col items-center gap-2 py-2">
+                        <img src={upiQrImage} alt="UPI QR Code" className="w-48 h-48 rounded-lg border border-border object-contain bg-white" />
+                        <a
+                          href={upiQrImage}
+                          download="upi-qr-code.png"
+                          className="text-xs text-primary font-medium hover:underline"
+                        >
+                          📥 Download QR Code
+                        </a>
+                      </div>
+                    )}
                     <a
                       href={`upi://pay?pa=${encodeURIComponent(upiId)}&am=${totalPrice}&cu=INR`}
                       className="block w-full text-center py-2.5 rounded-lg bg-accent text-accent-foreground font-medium text-sm hover:opacity-90 transition-opacity"
