@@ -160,7 +160,7 @@ const AdminUsers = () => {
       </div>
 
       <div className="space-y-3">
-        {users.map((u) => (
+        {filteredUsers.map((u) => (
           <div key={u.user_id} className="rounded-xl border border-border bg-card overflow-hidden">
             <div className="flex items-center gap-4 p-4">
               {/* Avatar */}
