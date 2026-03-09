@@ -85,7 +85,7 @@ const CartPage = () => {
     }
   };
 
-  // Fetch UPI ID
+  // Fetch UPI ID & QR
   useEffect(() => {
     supabase
       .from("site_settings" as any)
@@ -94,6 +94,14 @@ const CartPage = () => {
       .maybeSingle()
       .then(({ data }) => {
         if ((data as any)?.value) setUpiId((data as any).value);
+      });
+    supabase
+      .from("site_settings" as any)
+      .select("value")
+      .eq("key", "upi_qr_image")
+      .maybeSingle()
+      .then(({ data }) => {
+        if ((data as any)?.value) setUpiQrImage((data as any).value);
       });
   }, []);
 

@@ -35,7 +35,7 @@ const CheckoutStep = ({ config, selectedGalleryImage, onOrderPlaced }: CheckoutS
   const [upiQrImage, setUpiQrImage] = useState("");
   const [showUpi, setShowUpi] = useState(false);
 
-  // Fetch UPI ID
+  // Fetch UPI ID & QR
   useEffect(() => {
     supabase
       .from("site_settings" as any)
@@ -44,6 +44,14 @@ const CheckoutStep = ({ config, selectedGalleryImage, onOrderPlaced }: CheckoutS
       .maybeSingle()
       .then(({ data }) => {
         if ((data as any)?.value) setUpiId((data as any).value);
+      });
+    supabase
+      .from("site_settings" as any)
+      .select("value")
+      .eq("key", "upi_qr_image")
+      .maybeSingle()
+      .then(({ data }) => {
+        if ((data as any)?.value) setUpiQrImage((data as any).value);
       });
   }, []);
 
