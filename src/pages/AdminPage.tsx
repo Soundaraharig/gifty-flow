@@ -945,22 +945,7 @@ const AdminSettings = () => {
         </div>
 
         <button
-          onClick={() => {
-            // Include upi_qr_image in the save
-            const rows = [
-              ...SETTINGS_FIELDS.map((f) => ({
-                key: f.key,
-                value: (values[f.key] ?? "").trim(),
-                updated_at: new Date().toISOString(),
-              })),
-              {
-                key: "upi_qr_image",
-                value: (values["upi_qr_image"] ?? "").trim(),
-                updated_at: new Date().toISOString(),
-              },
-            ];
-            saveMutation.mutate();
-          }}
+          onClick={() => saveMutation.mutate()}
           disabled={saveMutation.isPending}
           className="px-5 py-2 rounded-full bg-primary text-primary-foreground text-sm font-medium disabled:opacity-50"
         >
