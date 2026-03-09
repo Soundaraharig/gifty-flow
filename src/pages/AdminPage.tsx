@@ -889,11 +889,18 @@ const AdminSettings = () => {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const rows = SETTINGS_FIELDS.map((f) => ({
-        key: f.key,
-        value: (values[f.key] ?? "").trim(),
-        updated_at: new Date().toISOString(),
-      }));
+      const rows = [
+        ...SETTINGS_FIELDS.map((f) => ({
+          key: f.key,
+          value: (values[f.key] ?? "").trim(),
+          updated_at: new Date().toISOString(),
+        })),
+        {
+          key: "upi_qr_image",
+          value: (values["upi_qr_image"] ?? "").trim(),
+          updated_at: new Date().toISOString(),
+        },
+      ];
       const { error } = await supabase
         .from("site_settings" as any)
         .upsert(rows as any, { onConflict: "key" });
@@ -925,6 +932,18 @@ const AdminSettings = () => {
             <p className="text-xs text-muted-foreground mt-1">{f.hint}</p>
           </div>
         ))}
+
+        {/* UPI QR Code Image Upload */}
+        <div>
+          <label className="text-xs text-muted-foreground mb-1 block">UPI QR Code Image</label>
+          <ImageUploadField
+            value={values["upi_qr_image"] || ""}
+            onChange={(url) => setValues((prev) => ({ ...prev, upi_qr_image: url }))}
+            folder="settings"
+          />
+          <p className="text-xs text-muted-foreground mt-1">Upload a QR code image for UPI payments. Customers can download and scan it.</p>
+        </div>
+
         <button
           onClick={() => saveMutation.mutate()}
           disabled={saveMutation.isPending}
