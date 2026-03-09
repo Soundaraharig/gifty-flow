@@ -29,6 +29,18 @@ const SubscriptionPage = () => {
     },
   });
 
+  const { data: qrImage } = useQuery({
+    queryKey: ["site_settings_upi_qr"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("site_settings")
+        .select("value")
+        .eq("key", "upi_qr_image")
+        .maybeSingle();
+      return (data as any)?.value || "";
+    },
+  });
+
   const { data: existingRequest, refetch } = useQuery({
     queryKey: ["my_subscription_request", user?.id],
     queryFn: async () => {
