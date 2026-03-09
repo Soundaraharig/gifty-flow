@@ -189,7 +189,14 @@ const ConfiguratorPage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-4 lg:gap-6">
           {/* Big Preview */}
           <div>
-            <div className="relative aspect-square rounded-xl overflow-hidden bg-muted border border-border max-w-[480px] group">
+            <div
+              className="relative aspect-square rounded-xl overflow-hidden bg-muted border border-border max-w-[480px] group cursor-pointer"
+              onClick={() => {
+                if (previewStyle && userSelected) {
+                  navigate(`/style-gallery/${previewStyle.id}`);
+                }
+              }}
+            >
               {heroImage ?
               <img
                 key={previewStyle?.id || "empty"}
@@ -204,6 +211,14 @@ const ConfiguratorPage = () => {
                   </div>
                 </div>
               }
+              {/* View More overlay on preview when style selected */}
+              {previewStyle && userSelected && (
+                <div className="absolute inset-0 flex items-center justify-center bg-foreground/0 group-hover:bg-foreground/30 transition-colors">
+                  <span className="text-sm font-medium text-primary-foreground opacity-0 group-hover:opacity-100 transition-opacity bg-primary/80 px-4 py-2 rounded-full">
+                    View More
+                  </span>
+                </div>
+              )}
               {/* Style name overlay during slideshow */}
               {previewStyle && !userSelected &&
               <div className="absolute bottom-10 left-0 right-0 px-4 animate-fade-in">

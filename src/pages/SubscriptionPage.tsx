@@ -193,6 +193,21 @@ const SubscriptionPage = () => {
                   >
                     <ExternalLink size={16} /> Open UPI App
                   </button>
+                  {qrImage && (
+                    <div className="space-y-2 pt-2 border-t border-border">
+                      <p className="text-xs text-muted-foreground font-medium text-center">Or scan QR code</p>
+                      <img src={qrImage} alt="UPI QR Code" className="w-48 h-48 mx-auto object-contain rounded-lg border border-border bg-background" />
+                      <a
+                        href={qrImage}
+                        download="upi-qr-code.png"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center gap-1.5 text-sm text-primary hover:underline"
+                      >
+                        <Download size={14} /> Download QR Code
+                      </a>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground">UPI ID not configured yet.</p>
