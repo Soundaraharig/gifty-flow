@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Shield, User, Trash2, ChevronDown, Phone, ShoppingBag, Mail, MapPin } from "lucide-react";
+import { Shield, User, Trash2, ChevronDown, Phone, ShoppingBag, Mail, MapPin, Search } from "lucide-react";
 
 const inputClass = "w-full px-3 py-2 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring";
 
