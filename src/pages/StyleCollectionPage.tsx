@@ -30,7 +30,6 @@ const StyleCollectionPage = () => {
 
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState("");
-  const [priceSort, setPriceSort] = useState<"default" | "low-high" | "high-low">("default");
   const [selectedTag, setSelectedTag] = useState<string>("all");
 
   // Keep track of hover/selected images for each style card dynamically
@@ -54,16 +53,11 @@ const StyleCollectionPage = () => {
       const isPopular = style.sort_order && style.sort_order <= 3;
       const matchesTag =
         selectedTag === "all" ||
-        (selectedTag === "popular" && isPopular) ||
-        (selectedTag === "budget" && (style.price ?? 0) <= 299);
+        (selectedTag === "popular" && isPopular);
 
       return matchesSearch && matchesTag;
     })
-    .sort((a, b) => {
-      if (priceSort === "low-high") return (a.price ?? 0) - (b.price ?? 0);
-      if (priceSort === "high-low") return (b.price ?? 0) - (a.price ?? 0);
-      return (a.sort_order ?? 0) - (b.sort_order ?? 0);
-    });
+    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -112,14 +106,13 @@ const StyleCollectionPage = () => {
             />
           </div>
 
-          {/* Filters & Sorting */}
+          {/* Filters */}
           <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
             {/* Quick Tag Filters */}
             <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-xl">
               {[
                 { id: "all", label: "All Styles" },
                 { id: "popular", label: "🔥 Popular" },
-                { id: "budget", label: "💎 Under ₹300" },
               ].map((tag) => (
                 <button
                   key={tag.id}
@@ -134,21 +127,6 @@ const StyleCollectionPage = () => {
                   {tag.label}
                 </button>
               ))}
-            </div>
-
-            {/* Price Sort Dropdown */}
-            <div className="relative flex items-center gap-2 bg-background border border-border rounded-xl px-3 py-2 text-sm text-muted-foreground">
-              <ArrowUpDown size={14} className="text-muted-foreground" />
-              <select
-                value={priceSort}
-                onChange={(e) => setPriceSort(e.target.value as any)}
-                className="bg-transparent text-xs font-semibold text-foreground focus:outline-none cursor-pointer pr-1"
-                id="sort-styles-select"
-              >
-                <option value="default">Sort: Default</option>
-                <option value="low-high">Price: Low to High</option>
-                <option value="high-low">Price: High to Low</option>
-              </select>
             </div>
           </div>
         </section>
@@ -174,7 +152,8 @@ const StyleCollectionPage = () => {
               return (
                 <article
                   key={style.id}
-                  className="group flex flex-col bg-card rounded-2xl overflow-hidden border border-border/80 hover:border-primary/40 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+                  onClick={() => navigate(`/style-gallery/${style.id}`)}
+                  className="group flex flex-col bg-card rounded-2xl overflow-hidden border border-border/80 hover:border-primary/40 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer"
                   id={`style-card-${style.slug}`}
                 >
                   {/* Card Header Preview */}
@@ -225,8 +204,9 @@ const StyleCollectionPage = () => {
                               onMouseEnter={() => {
                                 setHoveredImages((prev) => ({ ...prev, [style.id]: defaultImage }));
                               }}
-                              onClick={() => {
-                                navigate(`/configure/photo-frames?style=${style.id}&img=${encodeURIComponent(defaultImage)}`);
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setHoveredImages((prev) => ({ ...prev, [style.id]: defaultImage }));
                               }}
                               className={`w-10 h-10 rounded-lg overflow-hidden border-2 transition-all ${
                                 currentPreviewImage === defaultImage
@@ -246,8 +226,9 @@ const StyleCollectionPage = () => {
                                 onMouseEnter={() => {
                                   setHoveredImages((prev) => ({ ...prev, [style.id]: thumb.image_url }));
                                 }}
-                                onClick={() => {
-                                  navigate(`/configure/photo-frames?style=${style.id}&img=${encodeURIComponent(thumb.image_url)}`);
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setHoveredImages((prev) => ({ ...prev, [style.id]: thumb.image_url }));
                                 }}
                                 className={`w-10 h-10 rounded-lg overflow-hidden border-2 transition-all ${
                                   currentPreviewImage === thumb.image_url
@@ -278,24 +259,13 @@ const StyleCollectionPage = () => {
                     </div>
 
                     {/* Card Actions */}
-                    <div className="flex flex-col gap-2 pt-5 mt-auto">
-                      <button
-                        onClick={() => {
-                          const activeImg = hoveredImages[style.id] || defaultImage;
-                          navigate(`/configure/photo-frames?style=${style.id}&img=${encodeURIComponent(activeImg)}`);
-                        }}
-                        className="w-full py-2.5 rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold text-xs shadow-rose hover:opacity-95 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 flex items-center justify-center gap-1.5"
-                        id={`btn-customize-${style.slug}`}
-                      >
-                        ✨ Customize This Style <ArrowRight size={14} />
-                      </button>
-
+                    <div className="flex flex-col gap-2 pt-5 mt-auto" onClick={(e) => e.stopPropagation()}>
                       <button
                         onClick={() => navigate(`/style-gallery/${style.id}`)}
-                        className="w-full py-2.5 rounded-xl border border-border bg-card text-foreground hover:bg-muted/50 text-xs font-semibold transition-colors flex items-center justify-center gap-1"
+                        className="w-full py-3 rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold text-sm shadow-rose hover:opacity-95 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 flex items-center justify-center gap-1.5"
                         id={`btn-view-models-${style.slug}`}
                       >
-                        📸 View Model Gallery
+                        ✨ Explore Models & Customize <ArrowRight size={16} />
                       </button>
                     </div>
                   </div>
