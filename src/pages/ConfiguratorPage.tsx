@@ -190,7 +190,7 @@ const ConfiguratorPage = () => {
           {/* Big Preview */}
           <div>
             <div
-              className="relative aspect-square rounded-xl overflow-hidden bg-muted border border-border max-w-[480px] group cursor-pointer"
+              className="relative rounded-xl overflow-hidden bg-muted border border-border max-w-[480px] min-h-[300px] flex items-center justify-center group cursor-pointer shadow-sm"
               onClick={() => {
                 if (previewStyle && userSelected) {
                   navigate(`/style-gallery/${previewStyle.id}`);
@@ -202,9 +202,9 @@ const ConfiguratorPage = () => {
                 key={previewStyle?.id || "empty"}
                 src={heroImage}
                 alt={previewStyle?.name || "Select a style"}
-                className="w-full h-full object-cover animate-fade-in" /> :
+                className="w-full h-auto max-h-[480px] object-contain animate-fade-in" /> :
 
-              <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+              <div className="w-full h-full min-h-[300px] flex items-center justify-center text-muted-foreground">
                   <div className="text-center">
                     <div className="text-5xl mb-3">🎨</div>
                     <p className="font-medium">Select a style to preview</p>

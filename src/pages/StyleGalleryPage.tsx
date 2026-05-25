@@ -77,13 +77,13 @@ const StyleGalleryPage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-6 lg:gap-8">
             {/* Main Image */}
             <div className="lg:col-span-1">
-              <div className="relative aspect-square rounded-2xl overflow-hidden bg-muted border border-border max-w-[560px]">
+              <div className="relative rounded-2xl overflow-hidden bg-muted border border-border max-w-[560px] min-h-[300px] lg:min-h-[450px] flex items-center justify-center shadow-sm">
                 {mainImage &&
               <img
                 key={mainImage.id}
                 src={mainImage.image_url}
                 alt={mainImage.title || style?.name || "Gallery image"}
-                className="w-full h-full object-cover animate-fade-in" />
+                className="w-full h-auto max-h-[560px] object-contain animate-fade-in" />
 
               }
               </div>
