@@ -50,7 +50,15 @@ const CategoryGrid = () => {
               description={cat.description}
               image={cat.image}
               available={cat.available}
-              onClick={() => cat.available && navigate(`/configure/${cat.id}`)}
+              onClick={() => {
+                if (cat.available) {
+                  if (cat.id === "photo-frames") {
+                    navigate("/configure/photo-frames/styles");
+                  } else {
+                    navigate(`/configure/${cat.id}`);
+                  }
+                }
+              }}
             />
           ))}
         </div>

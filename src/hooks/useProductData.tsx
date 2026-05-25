@@ -5,6 +5,7 @@ import {
   fetchActiveFrameColors,
   fetchActiveFrameMaterials,
   fetchActiveSizes,
+  fetchEditingStylesWithGallery,
 } from "@/lib/productQueries";
 
 export const useEditingStyles = () =>
@@ -12,6 +13,13 @@ export const useEditingStyles = () =>
     queryKey: ["editing_styles"],
     queryFn: fetchActiveEditingStyles,
   });
+
+export const useEditingStylesWithGallery = () =>
+  useQuery({
+    queryKey: ["editing_styles_with_gallery"],
+    queryFn: fetchEditingStylesWithGallery,
+  });
+
 
 export const useSizes = () =>
   useQuery({

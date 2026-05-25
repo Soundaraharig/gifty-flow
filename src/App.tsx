@@ -12,6 +12,7 @@ import AuthPage from "./pages/AuthPage";
 import Index from "./pages/Index";
 import ConfiguratorPage from "./pages/ConfiguratorPage";
 import ResinConfiguratorPage from "./pages/ResinConfiguratorPage";
+import StyleCollectionPage from "./pages/StyleCollectionPage";
 import StyleGalleryPage from "./pages/StyleGalleryPage";
 import MyOrdersPage from "./pages/MyOrdersPage";
 import AdminPage from "./pages/AdminPage";
@@ -36,7 +37,9 @@ const App = () => (
               <Routes>
                 <Route path="/auth" element={<AuthPage />} />
                 <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+                <Route path="/configure/photo-frames/styles" element={<ProtectedRoute><StyleCollectionPage /></ProtectedRoute>} />
                 <Route path="/configure/photo-frames" element={<ProtectedRoute><ConfiguratorPage /></ProtectedRoute>} />
+
                 <Route path="/configure/resin-art" element={<ProtectedRoute><ResinConfiguratorPage /></ProtectedRoute>} />
                 <Route path="/style-gallery/:styleId" element={<ProtectedRoute><StyleGalleryPage /></ProtectedRoute>} />
                 <Route path="/categories" element={<ProtectedRoute><CategoriesPage /></ProtectedRoute>} />

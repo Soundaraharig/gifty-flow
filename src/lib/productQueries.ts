@@ -50,6 +50,35 @@ export async function fetchActiveEditingStyles(): Promise<Tables<"editing_styles
   return data ?? [];
 }
 
+export async function fetchEditingStylesWithGallery(): Promise<(Tables<"editing_styles"> & {
+  style_gallery_images: Tables<"style_gallery_images">[];
+})[]> {
+  const { data, error } = await withSupabaseTimeout(
+    supabase
+      .from("editing_styles")
+      .select(`
+        *,
+        style_gallery_images (*)
+      `)
+      .eq("is_active", true)
+      .eq("style_gallery_images.is_active", true)
+      .order("sort_order"),
+    "editing styles with gallery"
+  );
+
+  if (error) throw error;
+  
+  // Sort nested images manually as Supabase ordering in subqueries can sometimes be delicate
+  const results = data ?? [];
+  return results.map((style: any) => ({
+    ...style,
+    style_gallery_images: (style.style_gallery_images ?? []).sort(
+      (a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0)
+    ),
+  }));
+}
+
+
 export async function fetchActiveSizes(): Promise<Tables<"sizes">[]> {
   const { data, error } = await withSupabaseTimeout(
     supabase.from("sizes").select("*").eq("is_active", true).order("sort_order"),
