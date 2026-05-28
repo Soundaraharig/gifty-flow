@@ -345,15 +345,16 @@ const ARFrameScanner = () => {
               </button>
             </div>
 
-            {/* Video element container (plays beautifully at exact uploaded ratio!) */}
-            <div className="relative w-full bg-black/40 rounded-xl overflow-hidden border border-white/5 flex items-center justify-center p-0.5">
+            {/* Video element container (block layout, immune to mobile height collapse) */}
+            <div className="w-full border border-white/10 rounded-xl overflow-hidden bg-black/60 shadow-inner">
               <video
                 src={data.video_url}
                 autoPlay
                 controls
                 playsInline
-                className="w-full max-h-[50vh] rounded-xl"
-                style={{ objectFit: "contain" }}
+                preload="auto"
+                className="w-full h-auto block max-h-[50vh] rounded-xl"
+                style={{ display: "block" }}
               />
             </div>
 
