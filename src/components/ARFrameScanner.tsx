@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Loader2, AlertCircle, Camera } from "lucide-react";
+import { getOptimizedVideoUrl } from "@/lib/cloudinary";
 
 const ARFrameScanner = () => {
   const { frameId } = useParams<{ frameId: string }>();
@@ -388,14 +389,14 @@ const ARFrameScanner = () => {
 
       {/* A-Frame AR Engine */}
       <a-scene
-        mindar-image={`imageTargetSrc: ${data.target_mind_url}; autoStart: true;`}
+        mindar-image={`imageTargetSrc: ${data.target_mind_url ? (data.target_mind_url.includes("|") ? data.target_mind_url.split("|")[0] : data.target_mind_url) : ""}; autoStart: true;`}
         vr-mode-ui="enabled: false"
         device-orientation-permission-ui="enabled: false"
       >
         <a-assets>
           <video
             id="frameVideo"
-            src={data.video_url}
+            src={getOptimizedVideoUrl(data.video_url)}
             preload="auto"
             loop
             playsInline
@@ -453,7 +454,7 @@ const ARFrameScanner = () => {
             {/* Video element container (block layout, immune to mobile height collapse) */}
             <div className="w-full border border-white/10 rounded-xl overflow-hidden bg-black/60 shadow-inner">
               <video
-                src={data.video_url}
+                src={getOptimizedVideoUrl(data.video_url)}
                 autoPlay
                 loop
                 playsInline

@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Header from "@/components/Header";
 import { toast } from "sonner";
+import { uploadVideoToCloudinary } from "@/lib/cloudinary";
 
 import AdminUsers from "@/components/admin/AdminUsers";
 import AdminSubscriptions from "@/components/admin/AdminSubscriptions";
@@ -1125,8 +1126,8 @@ const AdminVideoFrames = ({ isAdmin }: { isAdmin: boolean }) => {
 
       for (const row of activeRows) {
         const rawTargetUrl = row.target_mind_url;
-        let photoUrl = "";
-        if (rawTargetUrl) {
+        let photoUrl = row.photo_url || "";
+        if (!photoUrl && rawTargetUrl) {
           if (rawTargetUrl.includes("|")) {
             photoUrl = rawTargetUrl.split("|")[1];
           } else if (rawTargetUrl.includes(".jpg") || rawTargetUrl.includes(".png") || rawTargetUrl.includes(".jpeg")) {
@@ -1181,7 +1182,10 @@ const AdminVideoFrames = ({ isAdmin }: { isAdmin: boolean }) => {
         const combinedValue = `${targetMindUrl}|${row.extractedPhotoUrl}`;
         await supabase
           .from("video_frames" as any)
-          .update({ target_mind_url: combinedValue } as any)
+          .update({ 
+            target_mind_url: combinedValue,
+            photo_url: row.extractedPhotoUrl
+          } as any)
           .eq("id", row.id);
       }
 
@@ -1225,6 +1229,28 @@ const AdminVideoFrames = ({ isAdmin }: { isAdmin: boolean }) => {
         throw new Error("The AR Image Compiler is still loading in the background. Please wait a few seconds and try clicking submit again.");
       }
 
+      // Helper function to compile image target to .mind Blob
+      const compileImage = async (file: File): Promise<Blob> => {
+        const loadLocalImg = (f: File): Promise<HTMLImageElement> => {
+          return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.src = URL.createObjectURL(f);
+            img.onload = () => {
+              URL.revokeObjectURL(img.src);
+              resolve(img);
+            };
+            img.onerror = () => reject(new Error("Failed to load image target for compilation."));
+          });
+        };
+        const localImg = await loadLocalImg(file);
+        const compiler = new (window as any).MINDAR.IMAGE.Compiler();
+        await compiler.compileImageTargets([localImg], (progress: number) => {
+          setUploadProgress(`Compiling target (${progress.toFixed(0)}%)...`);
+        });
+        const exportedBuffer = await compiler.exportData();
+        return new Blob([exportedBuffer], { type: "application/octet-stream" });
+      };
+
       // 1. Upload the raw target photo image file to Supabase Storage
       setUploadProgress("Uploading raw frame photo...");
       const rawPhotoExt = photoFile.name.split(".").pop();
@@ -1236,25 +1262,41 @@ const AdminVideoFrames = ({ isAdmin }: { isAdmin: boolean }) => {
       if (rawPhotoUploadError) throw rawPhotoUploadError;
       const targetPhotoUrl = `${SUPABASE_URL}/storage/v1/object/public/product-images/${rawPhotoPath}`;
 
-      // 2. Upload .mp4 video file
-      setUploadProgress("Uploading overlay video (.mp4)...");
-      const videoExt = videoFile.name.split(".").pop();
-      const videoPath = `video-frames/videos/${Date.now()}_${Math.random().toString(36).slice(2, 6)}.${videoExt}`;
-      const { error: videoUploadError } = await supabase.storage
-        .from("product-images")
-        .upload(videoPath, videoFile);
-      
-      if (videoUploadError) throw videoUploadError;
-      const videoUrl = `${SUPABASE_URL}/storage/v1/object/public/product-images/${videoPath}`;
+      // 2. Parallel upload pipeline for .mind compilation/upload & Cloudinary video upload
+      setUploadProgress("Running file uploads and compilation...");
 
-      // 3. Insert new row into public.video_frames (holding raw photo URL temporarily as target_mind_url)
+      const mindUploadPromise = (async () => {
+        const mindBlob = await compileImage(photoFile);
+        const mindPath = `video-frames/targets/${Date.now()}_${Math.random().toString(36).slice(2, 6)}.mind`;
+        const { error: mindUploadError } = await supabase.storage
+          .from("product-images")
+          .upload(mindPath, mindBlob, { contentType: "application/octet-stream" });
+        
+        if (mindUploadError) throw mindUploadError;
+        return `${SUPABASE_URL}/storage/v1/object/public/product-images/${mindPath}`;
+      })();
+
+      const videoUploadPromise = (async () => {
+        // Upload video file to our new uploadVideoToCloudinary(videoFile) utility function
+        return await uploadVideoToCloudinary(videoFile);
+      })();
+
+      // Wait for both to finish
+      const [targetMindUrl, cloudinaryVideoUrl] = await Promise.all([
+        mindUploadPromise,
+        videoUploadPromise,
+      ]);
+
+      // 3. Take both URLs and insert both into our video_frames table in Supabase
       setUploadProgress("Registering frame details in database...");
+      const combinedValue = `${targetMindUrl}|${targetPhotoUrl}`;
       const { error: insertError } = await supabase
         .from("video_frames" as any)
         .insert({
           frame_name: name.trim(),
-          target_mind_url: targetPhotoUrl,
-          video_url: videoUrl,
+          target_mind_url: combinedValue,
+          photo_url: targetPhotoUrl,
+          video_url: cloudinaryVideoUrl,
           created_by: user.id,
         } as any);
 
@@ -1274,10 +1316,10 @@ const AdminVideoFrames = ({ isAdmin }: { isAdmin: boolean }) => {
         }
       }
 
-      // 4. Trigger synchronous combined compilation and propagation
+      // 4. Trigger synchronous combined compilation and propagation to keep multi-targets synchronized
       await syncCompiledTargets(true);
 
-      alert("AR Frame created successfully with dynamically compiled multi-target coordinates!");
+      toast.success("AR Frame created successfully with dynamically compiled coordinates!");
       setName("");
       setPhotoFile(null);
       setVideoFile(null);
@@ -1290,7 +1332,8 @@ const AdminVideoFrames = ({ isAdmin }: { isAdmin: boolean }) => {
 
       qc.invalidateQueries({ queryKey: ["admin_video_frames"] });
     } catch (err: any) {
-      alert("AR Frame compilation or upload failed: " + err.message);
+      console.error("AR Frame creation or upload failed:", err);
+      toast.error(`AR Frame compilation or upload failed: ${err.message}`);
     } finally {
       setUploading(false);
       setUploadProgress("");

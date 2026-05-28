@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Loader2, AlertCircle, Sparkles, Image, Camera } from "lucide-react";
+import { getOptimizedVideoUrl } from "@/lib/cloudinary";
 
 const ScanFramePage = () => {
   const navigate = useNavigate();
@@ -474,7 +475,7 @@ const ScanFramePage = () => {
             <video
               key={frame.id}
               id={`video-${frame.id}`}
-              src={frame.video_url}
+              src={getOptimizedVideoUrl(frame.video_url)}
               preload="auto"
               loop
               playsInline
@@ -542,7 +543,7 @@ const ScanFramePage = () => {
             {/* Video Container (block layout, immune to mobile height collapse) */}
             <div className="w-full border border-white/10 rounded-xl overflow-hidden bg-black/60 shadow-inner">
               <video
-                src={detectedFrame.video_url}
+                src={getOptimizedVideoUrl(detectedFrame.video_url)}
                 autoPlay
                 loop
                 playsInline
