@@ -8,7 +8,7 @@ import Header from "@/components/Header";
 import AdminUsers from "@/components/admin/AdminUsers";
 import AdminSubscriptions from "@/components/admin/AdminSubscriptions";
 
-type Tab = "categories" | "styles" | "sizes" | "materials" | "orders" | "gallery" | "resin" | "settings" | "users" | "subscriptions";
+type Tab = "categories" | "styles" | "sizes" | "materials" | "orders" | "gallery" | "resin" | "settings" | "users" | "subscriptions" | "video-frames";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
@@ -50,6 +50,7 @@ const AdminPage = () => {
     { id: "resin", label: "Resin Types" },
     { id: "orders", label: "Orders" },
     { id: "gallery", label: "Gallery Images" },
+    { id: "video-frames", label: "Video Frames" },
     { id: "subscriptions", label: "Subscriptions" },
     { id: "users", label: "Users" },
     { id: "settings", label: "Settings" },
@@ -101,6 +102,7 @@ const AdminPage = () => {
         {tab === "resin" && <AdminResinTypes />}
         {tab === "orders" && <AdminOrders />}
         {tab === "gallery" && <AdminGalleryImages />}
+        {tab === "video-frames" && isAdmin && <AdminVideoFrames />}
         {tab === "subscriptions" && isAdmin && <AdminSubscriptions />}
         {tab === "users" && isAdmin && <AdminUsers />}
         {tab === "settings" && isAdmin && <AdminSettings />}
@@ -1012,6 +1014,228 @@ const AdminSettings = () => {
         >
           {saveMutation.isPending ? "Saving..." : "Save Settings"}
         </button>
+      </div>
+    </div>
+  );
+};
+
+// --- Video Frames AR Admin Curation Panel ---
+const AdminVideoFrames = () => {
+  const qc = useQueryClient();
+  const [name, setName] = useState("");
+  const [mindFile, setMindFile] = useState<File | null>(null);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState("");
+
+  const { data: frames = [], isLoading } = useQuery({
+    queryKey: ["admin_video_frames"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("video_frames" as any)
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("video_frames" as any)
+        .delete()
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin_video_frames"] });
+      alert("AR frame entry deleted successfully.");
+    },
+    onError: (err: any) => alert("Delete failed: " + err.message),
+  });
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim() || !mindFile || !videoFile) {
+      alert("Please fill in the frame name and select both target (.mind) and video (.mp4) files.");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      // 1. Upload .mind target file
+      setUploadProgress("Uploading tracking target (.mind)...");
+      const mindExt = mindFile.name.split(".").pop();
+      const mindPath = `video-frames/targets/${Date.now()}_${Math.random().toString(36).slice(2, 6)}.${mindExt}`;
+      const { error: mindUploadError } = await supabase.storage
+        .from("product-images")
+        .upload(mindPath, mindFile, { upsert: true });
+      if (mindUploadError) throw mindUploadError;
+      const targetMindUrl = `${SUPABASE_URL}/storage/v1/object/public/product-images/${mindPath}`;
+
+      // 2. Upload .mp4 video file
+      setUploadProgress("Uploading overlay video (.mp4)...");
+      const videoExt = videoFile.name.split(".").pop();
+      const videoPath = `video-frames/videos/${Date.now()}_${Math.random().toString(36).slice(2, 6)}.${videoExt}`;
+      const { error: videoUploadError } = await supabase.storage
+        .from("product-images")
+        .upload(videoPath, videoFile, { upsert: true });
+      if (videoUploadError) throw videoUploadError;
+      const videoUrl = `${SUPABASE_URL}/storage/v1/object/public/product-images/${videoPath}`;
+
+      // 3. Insert row into public.video_frames
+      setUploadProgress("Registering frame details in database...");
+      const { error: insertError } = await supabase
+        .from("video_frames" as any)
+        .insert({
+          frame_name: name.trim(),
+          target_mind_url: targetMindUrl,
+          video_url: videoUrl,
+        } as any);
+
+      if (insertError) throw insertError;
+
+      alert("AR Frame created successfully!");
+      setName("");
+      setMindFile(null);
+      setVideoFile(null);
+      
+      // Reset file input elements manually
+      const mindInput = document.getElementById("mind-file-input") as HTMLInputElement;
+      const videoInput = document.getElementById("video-file-input") as HTMLInputElement;
+      if (mindInput) mindInput.value = "";
+      if (videoInput) videoInput.value = "";
+
+      qc.invalidateQueries({ queryKey: ["admin_video_frames"] });
+    } catch (err: any) {
+      alert("AR Frame creation failed: " + err.message);
+    } finally {
+      setUploading(false);
+      setUploadProgress("");
+    }
+  };
+
+  const copyScannerLink = (id: string) => {
+    const link = `${window.location.origin}/scan/${id}`;
+    navigator.clipboard.writeText(link);
+    alert("Scanner link copied to clipboard:\n" + link);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="font-display text-xl font-bold text-foreground">Video Frames (AR)</h2>
+          <p className="text-sm text-muted-foreground">Manage and upload custom AR target configurations for physical frames.</p>
+        </div>
+      </div>
+
+      {/* Creation Form */}
+      <form onSubmit={handleCreate} className="p-5 rounded-xl border border-border bg-card space-y-4">
+        <h3 className="font-semibold text-foreground text-sm">Add New AR Video Frame</h3>
+        
+        <div className="space-y-2">
+          <label className="text-xs text-muted-foreground block">Frame Name</label>
+          <input
+            className={inputClass}
+            placeholder="e.g. Anniversary Frame A"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            disabled={uploading}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <label className="text-xs text-muted-foreground block">MindAR Target File (.mind)</label>
+            <input
+              id="mind-file-input"
+              type="file"
+              accept=".mind"
+              onChange={(e) => setMindFile(e.target.files?.[0] || null)}
+              className="w-full text-xs text-muted-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer"
+              disabled={uploading}
+            />
+            {mindFile && <p className="text-xs text-muted-foreground truncate font-mono">Selected: {mindFile.name}</p>}
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs text-muted-foreground block">Overlay Video (.mp4)</label>
+            <input
+              id="video-file-input"
+              type="file"
+              accept="video/mp4"
+              onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
+              className="w-full text-xs text-muted-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer"
+              disabled={uploading}
+            />
+            {videoFile && <p className="text-xs text-muted-foreground truncate font-mono">Selected: {videoFile.name}</p>}
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          disabled={uploading}
+          className="px-6 py-2 rounded-full bg-primary text-primary-foreground text-sm font-semibold flex items-center gap-2 disabled:opacity-50 hover:opacity-95 transition-opacity"
+        >
+          {uploading ? (
+            <>
+              <div className="animate-spin h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full" />
+              <span>{uploadProgress || "Uploading..."}</span>
+            </>
+          ) : (
+            "Create AR Frame Asset"
+          )}
+        </button>
+      </form>
+
+      {/* Frame List */}
+      <div>
+        <h3 className="font-semibold text-foreground text-sm mb-3">Active AR Frames</h3>
+        {isLoading ? (
+          <p className="text-muted-foreground text-sm">Loading frames...</p>
+        ) : frames.length === 0 ? (
+          <p className="text-muted-foreground text-sm bg-muted/20 p-4 rounded-xl text-center border border-dashed border-border">No AR frames registered yet.</p>
+        ) : (
+          <div className="space-y-3">
+            {frames.map((frame) => (
+              <div key={frame.id} className="p-4 rounded-xl border border-border bg-card flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+                <div className="space-y-1 max-w-md overflow-hidden bg-card text-left">
+                  <h4 className="font-semibold text-foreground">{frame.frame_name}</h4>
+                  <div className="text-xs text-muted-foreground space-y-0.5 font-mono">
+                    <p className="truncate"><strong>Target (.mind):</strong> <a href={frame.target_mind_url} target="_blank" rel="noreferrer" className="text-primary hover:underline">{frame.target_mind_url}</a></p>
+                    <p className="truncate"><strong>Video (.mp4):</strong> <a href={frame.video_url} target="_blank" rel="noreferrer" className="text-primary hover:underline">{frame.video_url}</a></p>
+                    <p className="font-sans text-[11px] text-muted-foreground/80 mt-1"><strong>Created:</strong> {new Date(frame.created_at).toLocaleString()}</p>
+                  </div>
+                </div>
+                
+                <div className="flex gap-2 flex-wrap shrink-0">
+                  <button
+                    onClick={() => copyScannerLink(frame.id)}
+                    className="px-3 py-1.5 rounded-full border border-border bg-background hover:bg-muted text-xs font-semibold text-foreground transition-all"
+                  >
+                    🔗 Copy Link
+                  </button>
+                  <a
+                    href={`/scan/${frame.id}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-3 py-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 text-xs font-semibold transition-all flex items-center gap-1"
+                  >
+                    👁️ Test
+                  </a>
+                  <button
+                    onClick={() => { if (confirm("Are you sure you want to delete this frame and RLS records?")) deleteMutation.mutate(frame.id); }}
+                    className="px-3 py-1.5 rounded-full border border-destructive/20 bg-destructive/5 hover:bg-destructive/10 text-xs font-semibold text-destructive transition-all"
+                  >
+                    🗑️ Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

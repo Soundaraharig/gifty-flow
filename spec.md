@@ -252,6 +252,14 @@ Global system variables.
 - `value`: `TEXT` (Not Null)
 - `updated_at`: `TIMESTAMPTZ`
 
+#### 15. `video_frames`
+Stores public links to overlay videos and compiled `.mind` files for web-based AR frames.
+- `id`: `UUID` (Primary Key, Default: `gen_random_uuid()`)
+- `frame_name`: `TEXT` (Not Null) - The name of the video frame
+- `target_mind_url`: `TEXT` (Not Null) - Public URL to the compiled AR `.mind` file
+- `video_url`: `TEXT` (Not Null) - Public URL to the overlay video
+- `created_at`: `TIMESTAMPTZ` (Default: `now()`)
+
 ### Enums
 - `app_role`: `'admin'` | `'subscriber'` | `'user'`
 

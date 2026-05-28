@@ -468,6 +468,30 @@ export type Database = {
         }
         Relationships: []
       }
+      video_frames: {
+        Row: {
+          created_at: string
+          frame_name: string
+          id: string
+          target_mind_url: string
+          video_url: string
+        }
+        Insert: {
+          created_at?: string
+          frame_name: string
+          id?: string
+          target_mind_url: string
+          video_url: string
+        }
+        Update: {
+          created_at?: string
+          frame_name?: string
+          id?: string
+          target_mind_url?: string
+          video_url?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
