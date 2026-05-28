@@ -1024,7 +1024,7 @@ const AdminSettings = () => {
 const AdminVideoFrames = ({ isAdmin }: { isAdmin: boolean }) => {
   const qc = useQueryClient();
   const [name, setName] = useState("");
-  const [mindFile, setMindFile] = useState<File | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState("");
@@ -1035,6 +1035,19 @@ const AdminVideoFrames = ({ isAdmin }: { isAdmin: boolean }) => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) setCurrentUserId(user.id);
     });
+  }, []);
+
+  // Dynamically load MindAR compiler script on mount
+  useEffect(() => {
+    const scriptSrc = "https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-compiler.prod.js";
+    if (document.querySelector(`script[src="${scriptSrc}"]`)) {
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = scriptSrc;
+    script.async = true;
+    script.onload = () => console.log("MindAR Image Compiler script loaded successfully.");
+    document.head.appendChild(script);
   }, []);
 
   // Fetch AR Frame records (Admins see all; Subscribers see only their own)
@@ -1071,8 +1084,8 @@ const AdminVideoFrames = ({ isAdmin }: { isAdmin: boolean }) => {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !mindFile || !videoFile) {
-      alert("Please fill in the frame name and select both target (.mind) and video (.mp4) files.");
+    if (!name.trim() || !photoFile || !videoFile) {
+      alert("Please fill in the frame name, upload a frame photo and select an overlay video (.mp4) file.");
       return;
     }
 
@@ -1081,27 +1094,55 @@ const AdminVideoFrames = ({ isAdmin }: { isAdmin: boolean }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No active authenticated user session was found.");
 
-      // 1. Upload .mind target file
-      setUploadProgress("Uploading tracking target (.mind)...");
-      const mindExt = mindFile.name.split(".").pop();
-      const mindPath = `video-frames/targets/${Date.now()}_${Math.random().toString(36).slice(2, 6)}.${mindExt}`;
+      // Check if MindAR compiler is loaded on window object
+      if (!(window as any).MINDAR?.IMAGE?.Compiler) {
+        throw new Error("The AR Image Compiler is still loading in the background. Please wait a few seconds and try clicking submit again.");
+      }
+
+      // 1. Compile the user's uploaded target image file on-the-fly in browser
+      setUploadProgress("Loading frame photo into compiler...");
+      
+      const imgElement = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const img = new Image();
+        img.src = URL.createObjectURL(photoFile);
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error("Failed to read the uploaded image target file."));
+      });
+
+      setUploadProgress("Compiling tracking points (0%)...");
+      const compiler = new (window as any).MINDAR.IMAGE.Compiler();
+      
+      await compiler.compileImageTargets([imgElement], (progress: number) => {
+        setUploadProgress(`Compiling target (${progress.toFixed(0)}%)...`);
+      });
+
+      setUploadProgress("Exporting compiled AR coordinates...");
+      const exportedBuffer = await compiler.exportData();
+      const mindBlob = new Blob([exportedBuffer], { type: "application/octet-stream" });
+
+      // 2. Upload compiled Blob as targets.mind to Supabase Storage
+      setUploadProgress("Uploading compiled target (.mind)...");
+      const mindPath = `video-frames/targets/${Date.now()}_${Math.random().toString(36).slice(2, 6)}.mind`;
+      
       const { error: mindUploadError } = await supabase.storage
         .from("product-images")
-        .upload(mindPath, mindFile);
+        .upload(mindPath, mindBlob, { contentType: "application/octet-stream" });
+      
       if (mindUploadError) throw mindUploadError;
       const targetMindUrl = `${SUPABASE_URL}/storage/v1/object/public/product-images/${mindPath}`;
 
-      // 2. Upload .mp4 video file
+      // 3. Upload .mp4 video file
       setUploadProgress("Uploading overlay video (.mp4)...");
       const videoExt = videoFile.name.split(".").pop();
       const videoPath = `video-frames/videos/${Date.now()}_${Math.random().toString(36).slice(2, 6)}.${videoExt}`;
       const { error: videoUploadError } = await supabase.storage
         .from("product-images")
         .upload(videoPath, videoFile);
+      
       if (videoUploadError) throw videoUploadError;
       const videoUrl = `${SUPABASE_URL}/storage/v1/object/public/product-images/${videoPath}`;
 
-      // 3. Insert row into public.video_frames mapped to creator UID
+      // 4. Insert row into public.video_frames mapped to creator UID
       setUploadProgress("Registering frame details in database...");
       const { error: insertError } = await supabase
         .from("video_frames" as any)
@@ -1114,27 +1155,25 @@ const AdminVideoFrames = ({ isAdmin }: { isAdmin: boolean }) => {
 
       if (insertError) throw insertError;
 
-      alert("AR Frame created successfully!");
+      alert("AR Frame created successfully with in-browser compiled tracking points!");
       setName("");
-      setMindFile(null);
+      setPhotoFile(null);
       setVideoFile(null);
       
       // Reset file input elements manually
-      const mindInput = document.getElementById("mind-file-input") as HTMLInputElement;
+      const photoInput = document.getElementById("photo-file-input") as HTMLInputElement;
       const videoInput = document.getElementById("video-file-input") as HTMLInputElement;
-      if (mindInput) mindInput.value = "";
+      if (photoInput) photoInput.value = "";
       if (videoInput) videoInput.value = "";
 
       qc.invalidateQueries({ queryKey: ["admin_video_frames"] });
     } catch (err: any) {
-      alert("AR Frame creation failed: " + err.message);
+      alert("AR Frame compilation or upload failed: " + err.message);
     } finally {
       setUploading(false);
       setUploadProgress("");
     }
   };
-
-
 
   return (
     <div className="space-y-6">
@@ -1162,16 +1201,16 @@ const AdminVideoFrames = ({ isAdmin }: { isAdmin: boolean }) => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <label className="text-xs text-muted-foreground block">MindAR Target File (.mind)</label>
+            <label className="text-xs text-muted-foreground block">Upload Frame Photo</label>
             <input
-              id="mind-file-input"
+              id="photo-file-input"
               type="file"
-              accept=".mind"
-              onChange={(e) => setMindFile(e.target.files?.[0] || null)}
+              accept="image/png, image/jpeg, image/jpg"
+              onChange={(e) => setPhotoFile(e.target.files?.[0] || null)}
               className="w-full text-xs text-muted-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer"
               disabled={uploading}
             />
-            {mindFile && <p className="text-xs text-muted-foreground truncate font-mono">Selected: {mindFile.name}</p>}
+            {photoFile && <p className="text-xs text-muted-foreground truncate font-mono">Selected: {photoFile.name}</p>}
           </div>
 
           <div className="space-y-2">
