@@ -148,14 +148,20 @@ const StyleCollectionPage = () => {
               const isPopular = style.sort_order && style.sort_order <= 3;
 
               return (
-                <button
+                <div
                   key={style.id}
                   onClick={() => navigate(`/configure/photo-frames?style=${style.id}`)}
-                  className="group relative rounded-2xl overflow-hidden border-2 text-left transition-all duration-300 bg-card hover:shadow-lg border-border hover:border-primary/40 flex flex-col w-full"
+                  className="group relative rounded-2xl overflow-hidden border-2 text-left transition-all duration-300 bg-card hover:shadow-lg border-border hover:border-primary/40 flex flex-col w-full cursor-pointer"
                   id={`style-card-${style.slug}`}
                 >
                   {/* Card Header Preview */}
-                  <div className="aspect-square overflow-hidden bg-muted w-full relative">
+                  <div 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/style-gallery/${style.id}`);
+                    }}
+                    className="aspect-square overflow-hidden bg-muted w-full relative cursor-pointer group/img"
+                  >
                     {/* Main Preview Image */}
                     {defaultImage ? (
                       <img
@@ -176,6 +182,13 @@ const StyleCollectionPage = () => {
                         🔥 Popular
                       </span>
                     )}
+
+                    {/* Hover view gallery overlay */}
+                    <div className="absolute inset-0 bg-foreground/0 group-hover/img:bg-foreground/30 transition-colors duration-300 flex items-center justify-center z-10">
+                      <span className="text-[11px] font-semibold text-primary-foreground opacity-0 group-hover/img:opacity-100 transition-opacity duration-300 bg-primary/95 px-3.5 py-1.5 rounded-full shadow-md flex items-center gap-1.5">
+                        📷 View Gallery
+                      </span>
+                    </div>
                   </div>
 
                   {/* Card Content */}
@@ -214,7 +227,7 @@ const StyleCollectionPage = () => {
                       </div>
                     </div>
                   </div>
-                </button>
+                </div>
               );
             })}
           </div>
