@@ -399,7 +399,6 @@ const ARFrameScanner = () => {
             playsInline
             webkit-playsinline="true"
             crossOrigin="anonymous"
-            muted
             autoPlay
             onLoadedMetadata={(e) => {
               const vid = e.currentTarget;
