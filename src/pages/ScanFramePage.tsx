@@ -10,6 +10,7 @@ const ScanFramePage = () => {
   const [activeTargetIndex, setActiveTargetIndex] = useState<number | null>(null);
   const [detectedFrame, setDetectedFrame] = useState<any | null>(null);
   const [arMode, setArMode] = useState<"popup" | "3d">("popup");
+  const [videoAspectRatios, setVideoAspectRatios] = useState<Record<string, number>>({});
 
   // Inject custom CSS to isolate A-Frame / MindAR and prevent Vite root container offsets or transition delays
   useEffect(() => {
@@ -479,6 +480,17 @@ const ScanFramePage = () => {
               playsInline
               webkit-playsinline="true"
               crossOrigin="anonymous"
+              onLoadedMetadata={(e) => {
+                const vid = e.currentTarget;
+                if (vid.videoWidth && vid.videoHeight) {
+                  const ratio = vid.videoWidth / vid.videoHeight;
+                  console.log(`[ScanFramePage] Widescreen/Aspect loaded for ${frame.frame_name}: ${vid.videoWidth}x${vid.videoHeight} = ${ratio}`);
+                  setVideoAspectRatios((prev) => ({
+                    ...prev,
+                    [frame.id]: ratio,
+                  }));
+                }
+              }}
             />
           ))}
         </a-assets>
@@ -495,7 +507,7 @@ const ScanFramePage = () => {
             <a-video
               src={`#video-${frame.id}`}
               width="1"
-              height="0.5625"
+              height={String(1 / (videoAspectRatios[frame.id] || (16 / 9)))}
               position="0 0 0"
               rotation="0 0 0"
               visible={arMode === "3d" ? "true" : "false"}

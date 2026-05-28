@@ -11,6 +11,7 @@ const ARFrameScanner = () => {
   const [isTracking, setIsTracking] = useState(false);
   const [isTargetDetected, setIsTargetDetected] = useState(false);
   const [arMode, setArMode] = useState<"popup" | "3d">("popup");
+  const [aspectRatio, setAspectRatio] = useState<number>(16 / 9);
 
   // Inject custom CSS to isolate A-Frame / MindAR and prevent Vite root container offsets or transition delays
   useEffect(() => {
@@ -400,6 +401,14 @@ const ARFrameScanner = () => {
             playsInline
             webkit-playsinline="true"
             crossOrigin="anonymous"
+            onLoadedMetadata={(e) => {
+              const vid = e.currentTarget;
+              if (vid.videoWidth && vid.videoHeight) {
+                const ratio = vid.videoWidth / vid.videoHeight;
+                console.log(`[ARFrameScanner] Aspect ratio loaded: ${vid.videoWidth}x${vid.videoHeight} = ${ratio}`);
+                setAspectRatio(ratio);
+              }
+            }}
           />
         </a-assets>
 
@@ -410,7 +419,7 @@ const ARFrameScanner = () => {
           <a-video
             src="#frameVideo"
             width="1"
-            height="0.5625"
+            height={String(1 / aspectRatio)}
             position="0 0 0"
             rotation="0 0 0"
             visible={arMode === "3d" ? "true" : "false"}
