@@ -8,7 +8,6 @@ const ScanFramePage = () => {
   const navigate = useNavigate();
   const [scriptsLoaded, setScriptsLoaded] = useState(false);
   const [activeTargetIndex, setActiveTargetIndex] = useState<number | null>(null);
-  const [videoSizes, setVideoSizes] = useState<Record<number, { width: number; height: number }>>({});
 
   // Inject custom CSS to isolate A-Frame / MindAR and prevent Vite root container offsets or transition delays
   useEffect(() => {
@@ -182,7 +181,7 @@ const ScanFramePage = () => {
 
     frames.forEach((frame, index) => {
       const anchor = document.getElementById(`targetAnchor-${index}`);
-      const video = document.getElementById(`frameVideo-${index}`) as HTMLVideoElement;
+      const video = document.getElementById(`video-${frame.id}`) as HTMLVideoElement;
 
       if (anchor && video) {
         const handleFound = () => {
@@ -190,14 +189,14 @@ const ScanFramePage = () => {
           setActiveTargetIndex(index);
           
           // Stop all other running overlay video assets to prevent concurrent audio playbacks
-          frames.forEach((_, otherIndex) => {
-            if (otherIndex !== index) {
-              const otherVid = document.getElementById(`frameVideo-${otherIndex}`) as HTMLVideoElement;
+          frames.forEach((otherFrame) => {
+            if (otherFrame.id !== frame.id) {
+              const otherVid = document.getElementById(`video-${otherFrame.id}`) as HTMLVideoElement;
               if (otherVid) {
                 try {
                   otherVid.pause();
                 } catch (e) {
-                  console.warn(`Error pausing non-active video (Index: ${otherIndex}):`, e);
+                  console.warn(`Error pausing non-active video:`, e);
                 }
               }
             }
@@ -353,25 +352,16 @@ const ScanFramePage = () => {
       >
         {/* Dynamic loading of video assets */}
         <a-assets>
-          {frames.map((frame, index) => (
+          {frames.map((frame) => (
             <video
               key={frame.id}
-              id={`frameVideo-${index}`}
+              id={`video-${frame.id}`}
               src={frame.video_url}
               preload="auto"
               loop={true}
               crossOrigin="anonymous"
               playsInline
               webkit-playsinline="true"
-              onLoadedMetadata={(e) => {
-                const video = e.currentTarget;
-                const aspect = video.videoHeight / video.videoWidth;
-                console.log(`[Aspect Track] Video ${index} dimensions: ${video.videoWidth}x${video.videoHeight}, Aspect: ${aspect}`);
-                setVideoSizes((prev) => ({
-                  ...prev,
-                  [index]: { width: 1, height: aspect }
-                }));
-              }}
             />
           ))}
         </a-assets>
@@ -386,9 +376,9 @@ const ScanFramePage = () => {
             id={`targetAnchor-${index}`}
           >
             <a-video
-              src={`#frameVideo-${index}`}
-              width={videoSizes[index]?.width || 1}
-              height={videoSizes[index]?.height || 1.4}
+              src={`#video-${frame.id}`}
+              width="1"
+              height="0.5625"
               position="0 0 0"
             />
           </a-entity>
