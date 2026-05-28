@@ -1089,7 +1089,7 @@ const AdminVideoFrames = ({ isAdmin }: { isAdmin: boolean }) => {
       const mindPath = `video-frames/targets/${Date.now()}_${Math.random().toString(36).slice(2, 6)}.${mindExt}`;
       const { error: mindUploadError } = await supabase.storage
         .from("product-images")
-        .upload(mindPath, mindFile, { upsert: true });
+        .upload(mindPath, mindFile);
       if (mindUploadError) throw mindUploadError;
       const targetMindUrl = `${SUPABASE_URL}/storage/v1/object/public/product-images/${mindPath}`;
 
@@ -1099,7 +1099,7 @@ const AdminVideoFrames = ({ isAdmin }: { isAdmin: boolean }) => {
       const videoPath = `video-frames/videos/${Date.now()}_${Math.random().toString(36).slice(2, 6)}.${videoExt}`;
       const { error: videoUploadError } = await supabase.storage
         .from("product-images")
-        .upload(videoPath, videoFile, { upsert: true });
+        .upload(videoPath, videoFile);
       if (videoUploadError) throw videoUploadError;
       const videoUrl = `${SUPABASE_URL}/storage/v1/object/public/product-images/${videoPath}`;
 

@@ -8,8 +8,14 @@ const ScanFramePage = () => {
   const navigate = useNavigate();
   const [scriptsLoaded, setScriptsLoaded] = useState(false);
 
-  // 1. Sequentially load script tags to ensure A-Frame loads before MindAR
+  // 1. Sequentially load script tags to ensure A-Frame loads before MindAR (skip if database check completed and no frames found)
   useEffect(() => {
+    if (isLoading) return;
+    if (frames.length === 0) {
+      console.log("No active target frames found in database. Skipping script initialization.");
+      return;
+    }
+
     const loadScript = (url: string): Promise<boolean> => {
       return new Promise((resolve, reject) => {
         if (document.querySelector(`script[src="${url}"]`)) {
@@ -84,7 +90,7 @@ const ScanFramePage = () => {
       document.body.classList.remove("a-body");
       document.documentElement.classList.remove("a-html");
     };
-  }, []);
+  }, [isLoading, frames.length]);
 
   // 2. Fetch all active video frame targets from the database
   const { data: frames = [], isLoading, error: dbError } = useQuery({
@@ -161,6 +167,29 @@ const ScanFramePage = () => {
 
   const totalError = dbError instanceof Error ? dbError.message : dbError ? String(dbError) : null;
 
+  // Intercept immediately if the query has finished and no active target frames are found
+  if (!isLoading && frames.length === 0) {
+    return (
+      <div className="w-screen h-screen absolute inset-0 z-50 bg-background flex flex-col items-center justify-center p-6 text-center">
+        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-4 animate-bounce">
+          <Sparkles className="w-8 h-8" />
+        </div>
+        <h3 className="text-xl font-bold text-foreground mb-2">No active target frames found</h3>
+        <p className="text-sm text-muted-foreground max-w-sm mb-6">
+          Please add a frame asset from the dashboard management tab before launching the scanner.
+        </p>
+        <div className="flex gap-3 justify-center">
+          <button
+            onClick={() => navigate(-1)}
+            className="px-6 py-2.5 rounded-full border border-border bg-card text-foreground font-medium text-sm hover:bg-muted transition-transform active:scale-95 flex items-center gap-2"
+          >
+            <ArrowLeft size={16} /> Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // Render Loader screen until dependencies and data are completely loaded
   if (!scriptsLoaded || isLoading) {
     return (
@@ -194,36 +223,6 @@ const ScanFramePage = () => {
       </div>
     );
   }
-
-  // Render Empty State if no AR Video Frames are found
-  if (frames.length === 0) {
-    return (
-      <div className="w-screen h-screen absolute inset-0 z-50 bg-background flex flex-col items-center justify-center p-6 text-center">
-        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-4 animate-bounce">
-          <Sparkles className="w-8 h-8" />
-        </div>
-        <h3 className="text-xl font-bold text-foreground mb-2">No Active AR Targets Available</h3>
-        <p className="text-sm text-muted-foreground max-w-sm mb-6">
-          There are no video frame assets uploaded yet. Log in as an admin or VIP subscriber to upload customized tracking frame targets and videos!
-        </p>
-        <div className="flex gap-3">
-          <button
-            onClick={() => navigate(-1)}
-            className="px-6 py-2.5 rounded-full border border-border bg-card text-foreground font-medium text-sm hover:bg-muted transition-transform active:scale-95"
-          >
-            Go Back
-          </button>
-          <button
-            onClick={() => navigate("/auth")}
-            className="px-6 py-2.5 rounded-full bg-primary text-primary-foreground font-medium text-sm hover:opacity-90 shadow-md shadow-rose/25 transition-transform hover:scale-105 active:scale-95"
-          >
-            Log In
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   // Grab the compiled multi-target mind collection URL from the first active database record
   const multiTargetSrc = frames[0]?.target_mind_url;
 

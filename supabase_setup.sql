@@ -1,4 +1,4 @@
-﻿
+
 -- Create role enum
 CREATE TYPE public.app_role AS ENUM ('admin', 'user');
 
@@ -435,11 +435,57 @@ ON public.subscription_requests FOR DELETE TO authenticated
 USING (public.has_role(auth.uid(), 'admin'));
 
 CREATE POLICY "Users can upload subscription screenshots"
-ON storage.objects FOR INSERT
-TO authenticated
-WITH CHECK (bucket_id = 'product-images' AND (storage.foldername(name))[1] = 'subscriptions');
+ON storage.objects FOR INSERT TO authenticated
+WITH CHECK (bucket_id = 'product-images' AND name LIKE 'subscriptions/%');
 
+CREATE POLICY "Users can update own subscription screenshots"
+ON storage.objects FOR UPDATE TO authenticated
+USING (bucket_id = 'product-images' AND name LIKE 'subscriptions/%')
+WITH CHECK (bucket_id = 'product-images' AND name LIKE 'subscriptions/%');
 CREATE POLICY "Public can view subscription screenshots"
-ON storage.objects FOR SELECT
-TO public
-USING (bucket_id = 'product-images' AND (storage.foldername(name))[1] = 'subscriptions');
+ON storage.objects FOR SELECT TO public
+USING (bucket_id = 'product-images' AND name LIKE 'subscriptions/%');
+
+-- Allow authenticated Admins and Subscribers to upload files in the 'video-frames' folder
+CREATE POLICY "Admins and Subscribers can upload video frame assets"
+ON storage.objects FOR INSERT TO authenticated
+WITH CHECK (
+  bucket_id = 'product-images' AND 
+  name LIKE 'video-frames/%' AND 
+  (
+    public.has_role(auth.uid(), 'admin'::public.app_role) OR 
+    public.has_role(auth.uid(), 'subscriber'::public.app_role)
+  )
+);
+
+-- Allow authenticated Admins and Subscribers to update files in the 'video-frames' folder (for upsert support)
+CREATE POLICY "Admins and Subscribers can update video frame assets"
+ON storage.objects FOR UPDATE TO authenticated
+USING (
+  bucket_id = 'product-images' AND 
+  name LIKE 'video-frames/%' AND 
+  (
+    public.has_role(auth.uid(), 'admin'::public.app_role) OR 
+    public.has_role(auth.uid(), 'subscriber'::public.app_role)
+  )
+)
+WITH CHECK (
+  bucket_id = 'product-images' AND 
+  name LIKE 'video-frames/%' AND 
+  (
+    public.has_role(auth.uid(), 'admin'::public.app_role) OR 
+    public.has_role(auth.uid(), 'subscriber'::public.app_role)
+  )
+);
+
+-- Allow authenticated Admins and Subscribers to delete their files in the 'video-frames' folder
+CREATE POLICY "Admins and Subscribers can delete video frame assets"
+ON storage.objects FOR DELETE TO authenticated
+USING (
+  bucket_id = 'product-images' AND 
+  name LIKE 'video-frames/%' AND 
+  (
+    public.has_role(auth.uid(), 'admin'::public.app_role) OR 
+    public.has_role(auth.uid(), 'subscriber'::public.app_role)
+  )
+);

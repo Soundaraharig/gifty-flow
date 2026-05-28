@@ -77,7 +77,7 @@ const SubscriptionPage = () => {
     try {
       const ext = file.name.split(".").pop();
       const path = `subscriptions/${user!.id}/${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("product-images").upload(path, file, { upsert: true });
+      const { error } = await supabase.storage.from("product-images").upload(path, file);
       if (error) throw error;
       const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/product-images/${path}`;
       setScreenshotUrl(publicUrl);
