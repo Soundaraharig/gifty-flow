@@ -1039,14 +1039,14 @@ const AdminVideoFrames = ({ isAdmin }: { isAdmin: boolean }) => {
 
   // Dynamically load MindAR compiler script on mount
   useEffect(() => {
-    const scriptSrc = "https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-compiler.prod.js";
+    const scriptSrc = "https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image.prod.js";
     if (document.querySelector(`script[src="${scriptSrc}"]`)) {
       return;
     }
     const script = document.createElement("script");
     script.src = scriptSrc;
-    script.async = true;
-    script.onload = () => console.log("MindAR Image Compiler script loaded successfully.");
+    script.type = "module"; // Load as ES module to resolve relative CDN chunks (controller/ui)
+    script.onload = () => console.log("MindAR Image Compiler ES module loaded successfully.");
     document.head.appendChild(script);
   }, []);
 
