@@ -1,35 +1,85 @@
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import CategoryCard from "./CategoryCard";
 import photoFramesImg from "@/assets/category-photo-frames.jpg";
 import resinArtImg from "@/assets/category-resin-art.jpg";
 import customGiftsImg from "@/assets/category-custom-gifts.jpg";
 
-const categories = [
+const FALLBACK_CATEGORY_IMAGES: Record<string, string> = {
+  "photo-frames": photoFramesImg,
+  "resin-art": resinArtImg,
+  "custom-gifts": customGiftsImg,
+};
+
+const defaultCategories = [
   {
     id: "photo-frames",
+    slug: "photo-frames",
     title: "Photo Frames",
     description: "Custom frames with artistic editing styles",
-    image: photoFramesImg,
-    available: true,
+    image_url: "",
+    is_active: true,
+    target_route: "/configure/photo-frames/styles",
   },
   {
     id: "resin-art",
+    slug: "resin-art",
     title: "Resin Art",
     description: "Beautiful handcrafted resin artwork",
-    image: resinArtImg,
-    available: true,
+    image_url: "",
+    is_active: true,
+    target_route: "/configure/resin-art",
   },
   {
     id: "custom-gifts",
+    slug: "custom-gifts",
     title: "Custom Gifts",
     description: "Personalized gifts for every occasion",
-    image: customGiftsImg,
-    available: false,
+    image_url: "",
+    is_active: true,
+    target_route: "/configure/custom-gifts",
   },
 ];
 
 const CategoryGrid = () => {
   const navigate = useNavigate();
+
+  const { data: dbCategories, isLoading } = useQuery({
+    queryKey: ["gift_categories"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("gift_categories" as any)
+        .select("*")
+        .order("sort_order", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+    retry: 1,
+  });
+
+  // Use database categories if loaded successfully and not empty, otherwise fallback
+  const displayCategories = dbCategories && dbCategories.length > 0
+    ? dbCategories.filter((cat: any) => cat.is_active)
+    : defaultCategories;
+
+  const getCategoryImage = (cat: any) => {
+    if (cat.image_url) return cat.image_url;
+    return FALLBACK_CATEGORY_IMAGES[cat.slug] || "";
+  };
+
+  const isAvailable = (cat: any) => {
+    if (cat.slug === "custom-gifts") return false;
+    return !!cat.target_route && cat.target_route !== "#" && cat.target_route !== "" && cat.target_route !== "/configure/custom-gifts";
+  };
+
+  if (isLoading && !dbCategories) {
+    return (
+      <div className="py-16 md:py-24 text-center">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto" />
+      </div>
+    );
+  }
 
   return (
     <section id="categories" className="py-16 md:py-24">
@@ -43,24 +93,23 @@ const CategoryGrid = () => {
           </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-          {categories.map((cat) => (
-            <CategoryCard
-              key={cat.id}
-              title={cat.title}
-              description={cat.description}
-              image={cat.image}
-              available={cat.available}
-              onClick={() => {
-                if (cat.available) {
-                  if (cat.id === "photo-frames") {
-                    navigate("/configure/photo-frames/styles");
-                  } else {
-                    navigate(`/configure/${cat.id}`);
+          {displayCategories.map((cat) => {
+            const available = isAvailable(cat);
+            return (
+              <CategoryCard
+                key={cat.slug}
+                title={cat.title}
+                description={cat.description || ""}
+                image={getCategoryImage(cat)}
+                available={available}
+                onClick={() => {
+                  if (available && cat.target_route) {
+                    navigate(cat.target_route);
                   }
-                }
-              }}
-            />
-          ))}
+                }}
+              />
+            );
+          })}
         </div>
       </div>
     </section>
@@ -68,3 +117,4 @@ const CategoryGrid = () => {
 };
 
 export default CategoryGrid;
+

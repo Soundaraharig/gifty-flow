@@ -28,6 +28,26 @@ const CartPage = () => {
   const [upiQrImage, setUpiQrImage] = useState("");
   const [showUpi, setShowUpi] = useState(false);
   const [paidViaUpi, setPaidViaUpi] = useState(false);
+  const [utrId, setUtrId] = useState("");
+  const [orderPlaced, setOrderPlaced] = useState(false);
+  const [countdown, setCountdown] = useState(3);
+  const [redirectUrl, setRedirectUrl] = useState("");
+
+  // Auto redirection timer for professional checkout flow
+  useEffect(() => {
+    if (!orderPlaced || !redirectUrl) return;
+    const interval = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          window.location.href = redirectUrl;
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [orderPlaced, redirectUrl]);
 
   // Address mode
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
@@ -134,6 +154,7 @@ const CartPage = () => {
           notes: [
             item.type === "resin" ? `Resin: ${item.name} x${item.quantity}` : null,
             address.trim(),
+            paidViaUpi && utrId ? `UPI Ref/UTR: ${utrId}` : null,
             notes.trim(),
           ].filter(Boolean).join(" | ") || null,
         } as any);
@@ -148,6 +169,7 @@ const CartPage = () => {
         `🛒 *New Cart Order*`,
         `👤 ${name.trim()}`,
         `📱 ${phone.trim()}`,
+        paidViaUpi && utrId ? `💳 UPI Ref/UTR: ${utrId}` : null,
         `\n${itemsList}`,
         address.trim() ? `\n📍 ${address.trim()}` : null,
         notes.trim() ? `📝 ${notes.trim()}` : null,
@@ -163,7 +185,8 @@ const CartPage = () => {
       const waUrl = `https://wa.me/${adminPhone}?text=${encodeURIComponent(orderText)}`;
 
       clearCart();
-      window.location.href = waUrl;
+      setRedirectUrl(waUrl);
+      setOrderPlaced(true);
     } catch (err: any) {
       toast.error("Failed to place order: " + (err.message || "Please try again"));
     } finally {
@@ -171,7 +194,51 @@ const CartPage = () => {
     }
   };
 
-  const isValid = name.trim().length > 0 && phone.trim().length >= 10;
+  const isValid = name.trim().length > 0 && phone.trim().length >= 10 && (!paidViaUpi || utrId.length === 12);
+
+  if (orderPlaced) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col justify-between">
+        <div>
+          <Header />
+          <div className="container mx-auto px-4 pt-24 max-w-md pb-12">
+            <div className="flex flex-col items-center justify-center p-8 rounded-3xl border border-border bg-card shadow-xl text-center animate-scale-in">
+              <div className="text-7xl mb-6 animate-bounce">🎉</div>
+              <h2 className="font-display text-3xl font-bold text-foreground mb-3">Order Placed!</h2>
+              <p className="text-muted-foreground text-sm max-w-xs mb-6">
+                Your order has been recorded successfully in our system!
+              </p>
+              
+              <div className="w-full p-4 rounded-2xl bg-primary/5 border border-primary/10 mb-6 text-sm">
+                <p className="text-foreground font-medium mb-1">Redirection Status</p>
+                <p className="text-muted-foreground text-xs leading-relaxed">
+                  Opening WhatsApp to verify your payment receipt in <span className="font-bold text-primary text-base">{countdown}s</span>...
+                </p>
+              </div>
+
+              <div className="space-y-3 w-full">
+                <a
+                  href={redirectUrl}
+                  className="w-full bg-primary text-primary-foreground py-3.5 rounded-full font-semibold text-sm shadow-rose hover:opacity-90 transition-all flex items-center justify-center gap-2"
+                >
+                  💬 Open WhatsApp Now
+                </a>
+                <button
+                  onClick={() => navigate("/my-orders", { replace: true })}
+                  className="w-full py-3.5 rounded-full border-2 border-primary text-primary font-semibold text-sm hover:bg-primary/5 transition-colors"
+                >
+                  📦 Track My Orders
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <footer className="py-8 text-center text-sm text-muted-foreground border-t border-border mt-auto">
+          <p>© 2026 Zero Gifts. Handcrafted with ❤️</p>
+        </footer>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -424,18 +491,40 @@ const CartPage = () => {
                     >
                       📱 Open UPI App
                     </a>
-                    <label className="flex items-center gap-2 mt-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={paidViaUpi}
-                        onChange={(e) => setPaidViaUpi(e.target.checked)}
-                        className="w-4 h-4 rounded border-border text-primary focus:ring-ring"
-                      />
-                      <span className="text-sm font-medium text-foreground">I have paid via UPI</span>
-                    </label>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Check this box after payment, then click "Place Order" to confirm.
-                    </p>
+                    <div className="space-y-3 pt-2">
+                      <label className="flex items-start gap-2.5 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={paidViaUpi}
+                          onChange={(e) => setPaidViaUpi(e.target.checked)}
+                          className="w-4 h-4 rounded border-border text-primary focus:ring-ring mt-1"
+                        />
+                        <span className="text-sm font-medium text-foreground leading-tight">I have paid via UPI</span>
+                      </label>
+                      
+                      {paidViaUpi && (
+                        <div className="space-y-1.5 animate-fade-in pl-6">
+                          <label className="block text-[11px] font-semibold text-foreground uppercase tracking-wider">
+                            UPI UTR / Ref Number (12 digits) *
+                          </label>
+                          <input
+                            type="text"
+                            pattern="\d{12}"
+                            maxLength={12}
+                            value={utrId}
+                            onChange={(e) => {
+                              const val = e.target.value.replace(/\D/g, "");
+                              setUtrId(val);
+                            }}
+                            placeholder="e.g. 612345678901"
+                            className="w-full px-3 py-2 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring font-mono"
+                          />
+                          <p className="text-[10px] text-muted-foreground">
+                            Enter the 12-digit transaction/UTR reference ID shown on Google Pay, PhonePe, or Paytm receipt.
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>

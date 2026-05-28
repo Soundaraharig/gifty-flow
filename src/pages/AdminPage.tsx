@@ -8,14 +8,14 @@ import Header from "@/components/Header";
 import AdminUsers from "@/components/admin/AdminUsers";
 import AdminSubscriptions from "@/components/admin/AdminSubscriptions";
 
-type Tab = "styles" | "sizes" | "materials" | "orders" | "gallery" | "resin" | "settings" | "users" | "subscriptions";
+type Tab = "categories" | "styles" | "sizes" | "materials" | "orders" | "gallery" | "resin" | "settings" | "users" | "subscriptions";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
 const AdminPage = () => {
   const { user, isAdmin, isSubscriber, loading, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
-  const [tab, setTab] = useState<Tab>("styles");
+  const [tab, setTab] = useState<Tab>("categories");
 
   if (loading) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading...</div>;
 
@@ -43,6 +43,7 @@ const AdminPage = () => {
 
   // Subscriber sees limited tabs; admin sees all
   const adminTabs: { id: Tab; label: string }[] = [
+    { id: "categories", label: "Gift Categories" },
     { id: "styles", label: "Editing Styles" },
     { id: "sizes", label: "Sizes" },
     { id: "materials", label: "Frame Materials" },
@@ -55,6 +56,7 @@ const AdminPage = () => {
   ];
 
   const subscriberTabs: { id: Tab; label: string }[] = [
+    { id: "categories", label: "Gift Categories" },
     { id: "styles", label: "Editing Styles" },
     { id: "sizes", label: "Sizes" },
     { id: "materials", label: "Frame Materials" },
@@ -92,6 +94,7 @@ const AdminPage = () => {
           ))}
         </div>
 
+        {tab === "categories" && <AdminGiftCategories />}
         {tab === "styles" && <AdminEditingStyles />}
         {tab === "sizes" && <AdminSizes />}
         {tab === "materials" && <AdminFrameMaterials />}
@@ -336,6 +339,64 @@ function AdminCrudTable({
 }
 
 const inputClass = "w-full px-3 py-2 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring";
+
+// --- Gift Categories (with image upload) ---
+const AdminGiftCategories = () => (
+  <AdminCrudTable
+    tableName="gift_categories"
+    queryKey="admin_gift_categories"
+    columns={[
+      {
+        key: "image_url", label: "Image",
+        render: (val: string) => val ? <img src={val} alt="" className="w-12 h-8 object-cover rounded" /> : <span className="text-muted-foreground text-xs">No image</span>
+      },
+      { key: "title", label: "Title" },
+      { key: "slug", label: "Slug" },
+      { key: "target_route", label: "Target Route" },
+      { key: "is_active", label: "Active", render: (val: boolean) => val ? "✅" : "❌" },
+      { key: "sort_order", label: "Order" },
+    ]}
+    defaultValues={{ slug: "", title: "", description: "", image_url: "", sort_order: 0, target_route: "", is_active: true }}
+    renderForm={(v, set) => (
+      <>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Title</label>
+            <input className={inputClass} placeholder="Title" value={v.title || ""} onChange={(e) => set("title", e.target.value)} />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Slug</label>
+            <input className={inputClass} placeholder="Slug (e.g. photo-frames)" value={v.slug || ""} onChange={(e) => set("slug", e.target.value)} />
+          </div>
+        </div>
+        <div>
+          <label className="text-xs text-muted-foreground mb-1 block">Description</label>
+          <input className={inputClass} placeholder="Short description" value={v.description || ""} onChange={(e) => set("description", e.target.value)} />
+        </div>
+        <div>
+          <label className="text-xs text-muted-foreground mb-1 block">Target Route (URL)</label>
+          <input className={inputClass} placeholder="e.g. /configure/photo-frames/styles" value={v.target_route || ""} onChange={(e) => set("target_route", e.target.value)} />
+        </div>
+        <div>
+          <label className="text-xs text-muted-foreground mb-1 block">Category Image</label>
+          <ImageUploadField value={v.image_url || ""} onChange={(url) => set("image_url", url)} folder="categories" />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Sort Order</label>
+            <input className={inputClass} type="number" value={v.sort_order || 0} onChange={(e) => set("sort_order", +e.target.value)} />
+          </div>
+          <div className="flex items-end pb-3">
+            <label className="flex items-center gap-2 text-sm text-foreground">
+              <input type="checkbox" checked={!!v.is_active} onChange={(e) => set("is_active", e.target.checked)} />
+              Active / Available
+            </label>
+          </div>
+        </div>
+      </>
+    )}
+  />
+);
 
 // --- Editing Styles (with image upload) ---
 const AdminEditingStyles = () => (

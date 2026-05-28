@@ -1,5 +1,6 @@
 import Header from "@/components/Header";
 import HeroSection from "@/components/HeroSection";
+import CategoryGrid from "@/components/CategoryGrid";
 import HowItWorks from "@/components/HowItWorks";
 import Testimonials from "@/components/Testimonials";
 import StatsAndCTA from "@/components/StatsAndCTA";
@@ -9,6 +10,7 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Header />
       <HeroSection />
+      <CategoryGrid />
       <HowItWorks />
       <Testimonials />
       <StatsAndCTA />
@@ -20,3 +22,4 @@ const Index = () => {
 };
 
 export default Index;
+

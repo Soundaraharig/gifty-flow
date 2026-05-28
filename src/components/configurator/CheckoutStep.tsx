@@ -56,6 +56,7 @@ const CheckoutStep = ({ config, selectedGalleryImage, onOrderPlaced }: CheckoutS
   }, []);
 
   const [paidViaUpi, setPaidViaUpi] = useState(false);
+  const [utrId, setUtrId] = useState("");
 
   // Saved addresses
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
@@ -145,7 +146,11 @@ const CheckoutStep = ({ config, selectedGalleryImage, onOrderPlaced }: CheckoutS
           frame_color_id: config.frameColorId,
           addon_ids: config.addonIds,
           total_price: summary?.total ?? 0,
-          notes: [address.trim(), notes.trim()].filter(Boolean).join(" | ") || null,
+          notes: [
+            address.trim(),
+            paidViaUpi && utrId ? `UPI Ref/UTR: ${utrId}` : null,
+            notes.trim()
+          ].filter(Boolean).join(" | ") || null,
           payment_method: paidViaUpi ? "upi" : "cod",
         })
         .select("id")
@@ -173,6 +178,7 @@ const CheckoutStep = ({ config, selectedGalleryImage, onOrderPlaced }: CheckoutS
         styleImageUrl ? `🖼️ Style Image: ${styleImageUrl}` : null,
         summary?.sizeName ? `📐 Size: ${summary.sizeName}` : null,
         summary?.materialName ? `🖼 Frame: ${summary.materialName}` : null,
+        paidViaUpi && utrId ? `💳 UPI Ref/UTR: ${utrId}` : null,
         address.trim() ? `📍 ${address.trim()}` : null,
         notes.trim() ? `📝 ${notes.trim()}` : null,
         `💰 Total: ₹${summary?.total ?? 0}`,
@@ -202,7 +208,7 @@ const CheckoutStep = ({ config, selectedGalleryImage, onOrderPlaced }: CheckoutS
     }
   };
 
-  const isValid = name.trim().length > 0 && phone.trim().length >= 10;
+  const isValid = name.trim().length > 0 && phone.trim().length >= 10 && (!paidViaUpi || utrId.length === 12);
 
   return (
     <div>
@@ -378,18 +384,40 @@ const CheckoutStep = ({ config, selectedGalleryImage, onOrderPlaced }: CheckoutS
                 >
                   📱 Open UPI App
                 </a>
-                <label className="flex items-center gap-2 mt-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={paidViaUpi}
-                    onChange={(e) => setPaidViaUpi(e.target.checked)}
-                    className="w-4 h-4 rounded border-border text-primary focus:ring-ring"
-                  />
-                  <span className="text-sm font-medium text-foreground">I have paid via UPI</span>
-                </label>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Check this box after payment, then click "Place Order" to confirm.
-                </p>
+                <div className="space-y-3 pt-2">
+                  <label className="flex items-start gap-2.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={paidViaUpi}
+                      onChange={(e) => setPaidViaUpi(e.target.checked)}
+                      className="w-4 h-4 rounded border-border text-primary focus:ring-ring mt-1"
+                    />
+                    <span className="text-sm font-medium text-foreground leading-tight">I have paid via UPI</span>
+                  </label>
+                  
+                  {paidViaUpi && (
+                    <div className="space-y-1.5 animate-fade-in pl-6">
+                      <label className="block text-[11px] font-semibold text-foreground uppercase tracking-wider">
+                        UPI UTR / Ref Number (12 digits) *
+                      </label>
+                      <input
+                        type="text"
+                        pattern="\d{12}"
+                        maxLength={12}
+                        value={utrId}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, "");
+                          setUtrId(val);
+                        }}
+                        placeholder="e.g. 612345678901"
+                        className="w-full px-3 py-2 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring font-mono"
+                      />
+                      <p className="text-[10px] text-muted-foreground">
+                        Enter the 12-digit transaction/UTR reference ID shown on Google Pay, PhonePe, or Paytm receipt.
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
