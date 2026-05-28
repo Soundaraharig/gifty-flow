@@ -165,7 +165,7 @@ const ScanFramePage = () => {
       const { data, error } = await supabase
         .from("video_frames" as any)
         .select("*")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: true }); // Chronological!
 
       if (error) throw error;
       return (data ?? []) as any[];
@@ -291,8 +291,9 @@ const ScanFramePage = () => {
       </div>
     );
   }
-  // Grab the compiled multi-target mind collection URL from the first active database record
-  const multiTargetSrc = frames[0]?.target_mind_url;
+  // Grab the compiled multi-target mind collection URL from the first active database record (parsing our combined format)
+  const rawTargetUrl = frames[0]?.target_mind_url;
+  const multiTargetSrc = rawTargetUrl ? (rawTargetUrl.includes("|") ? rawTargetUrl.split("|")[0] : rawTargetUrl) : "";
 
   return (
     <div className="fixed inset-0 w-screen h-screen z-[9999] bg-black overflow-visible">

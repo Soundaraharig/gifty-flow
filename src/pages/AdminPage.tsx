@@ -1067,6 +1067,110 @@ const AdminVideoFrames = ({ isAdmin }: { isAdmin: boolean }) => {
     enabled: currentUserId !== null || isAdmin, // Enable query once auth context is resolved or if admin
   });
 
+  const syncCompiledTargets = async (showProgress = false) => {
+    try {
+      // 1. Fetch all existing active frame records in chronological order
+      const { data: activeRows, error: fetchErr } = await supabase
+        .from("video_frames" as any)
+        .select("*")
+        .order("created_at", { ascending: true }); // Chronological!
+      
+      if (fetchErr) throw fetchErr;
+
+      if (!activeRows || activeRows.length === 0) {
+        console.log("No active frames remaining to compile.");
+        return;
+      }
+
+      // Check if MindAR compiler is loaded on window object
+      if (!(window as any).MINDAR?.IMAGE?.Compiler) {
+        console.warn("AR Image Compiler not loaded yet.");
+        return;
+      }
+
+      // 2. Load all images into HTML Image elements to prepare for compilation
+      const loadImg = (url: string): Promise<HTMLImageElement> => {
+        return new Promise((resolve, reject) => {
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          img.src = url;
+          img.onload = () => resolve(img);
+          img.onerror = () => reject(new Error("Failed to load image target for compilation."));
+        });
+      };
+
+      const imageElements: HTMLImageElement[] = [];
+      const validRows: any[] = [];
+
+      for (const row of activeRows) {
+        const rawTargetUrl = row.target_mind_url;
+        let photoUrl = "";
+        if (rawTargetUrl) {
+          if (rawTargetUrl.includes("|")) {
+            photoUrl = rawTargetUrl.split("|")[1];
+          } else if (rawTargetUrl.includes(".jpg") || rawTargetUrl.includes(".png") || rawTargetUrl.includes(".jpeg")) {
+            photoUrl = rawTargetUrl; // Newly inserted before compile
+          }
+        }
+
+        if (photoUrl) {
+          try {
+            const img = await loadImg(photoUrl);
+            imageElements.push(img);
+            validRows.push({ ...row, extractedPhotoUrl: photoUrl });
+          } catch (err) {
+            console.warn("Could not load photo for combined compile, skipping row:", row.id, err);
+          }
+        }
+      }
+
+      if (imageElements.length === 0) {
+        console.log("No valid photo targets found to compile.");
+        return;
+      }
+
+      // 3. Compile all targets together programmatically on-the-fly in browser
+      if (showProgress) setUploadProgress(`Compiling ${imageElements.length} targets together (0%)...`);
+      const compiler = new (window as any).MINDAR.IMAGE.Compiler();
+      
+      await compiler.compileImageTargets(imageElements, (progress: number) => {
+        if (showProgress) {
+          setUploadProgress(`Compiling targets (${progress.toFixed(0)}%)...`);
+        }
+      });
+
+      if (showProgress) setUploadProgress("Exporting compiled AR coordinates...");
+      const exportedBuffer = await compiler.exportData();
+      const mindBlob = new Blob([exportedBuffer], { type: "application/octet-stream" });
+
+      // 4. Upload compiled combined targets.mind to Supabase Storage
+      if (showProgress) setUploadProgress("Uploading compiled target (.mind)...");
+      const mindPath = `video-frames/targets/${Date.now()}_${Math.random().toString(36).slice(2, 6)}.mind`;
+      
+      const { error: mindUploadError } = await supabase.storage
+        .from("product-images")
+        .upload(mindPath, mindBlob, { contentType: "application/octet-stream" });
+      
+      if (mindUploadError) throw mindUploadError;
+      const targetMindUrl = `${SUPABASE_URL}/storage/v1/object/public/product-images/${mindPath}`;
+
+      // 5. Update all rows in the database to point to this new combined .mind file while preserving their unique photo_urls
+      if (showProgress) setUploadProgress("Propagating compiled coordinates to active targets...");
+      for (const row of validRows) {
+        const combinedValue = `${targetMindUrl}|${row.extractedPhotoUrl}`;
+        await supabase
+          .from("video_frames" as any)
+          .update({ target_mind_url: combinedValue } as any)
+          .eq("id", row.id);
+      }
+
+      console.log("Successfully recompiled and synchronized all AR target coordinates!");
+    } catch (err: any) {
+      console.error("Failed to synchronize compiled AR targets:", err);
+      if (showProgress) alert("AR targets synchronization failed: " + err.message);
+    }
+  };
+
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
@@ -1075,7 +1179,8 @@ const AdminVideoFrames = ({ isAdmin }: { isAdmin: boolean }) => {
         .eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      await syncCompiledTargets(false);
       qc.invalidateQueries({ queryKey: ["admin_video_frames"] });
       alert("AR frame entry deleted successfully.");
     },
@@ -1099,39 +1204,18 @@ const AdminVideoFrames = ({ isAdmin }: { isAdmin: boolean }) => {
         throw new Error("The AR Image Compiler is still loading in the background. Please wait a few seconds and try clicking submit again.");
       }
 
-      // 1. Compile the user's uploaded target image file on-the-fly in browser
-      setUploadProgress("Loading frame photo into compiler...");
-      
-      const imgElement = await new Promise<HTMLImageElement>((resolve, reject) => {
-        const img = new Image();
-        img.src = URL.createObjectURL(photoFile);
-        img.onload = () => resolve(img);
-        img.onerror = () => reject(new Error("Failed to read the uploaded image target file."));
-      });
-
-      setUploadProgress("Compiling tracking points (0%)...");
-      const compiler = new (window as any).MINDAR.IMAGE.Compiler();
-      
-      await compiler.compileImageTargets([imgElement], (progress: number) => {
-        setUploadProgress(`Compiling target (${progress.toFixed(0)}%)...`);
-      });
-
-      setUploadProgress("Exporting compiled AR coordinates...");
-      const exportedBuffer = await compiler.exportData();
-      const mindBlob = new Blob([exportedBuffer], { type: "application/octet-stream" });
-
-      // 2. Upload compiled Blob as targets.mind to Supabase Storage
-      setUploadProgress("Uploading compiled target (.mind)...");
-      const mindPath = `video-frames/targets/${Date.now()}_${Math.random().toString(36).slice(2, 6)}.mind`;
-      
-      const { error: mindUploadError } = await supabase.storage
+      // 1. Upload the raw target photo image file to Supabase Storage
+      setUploadProgress("Uploading raw frame photo...");
+      const rawPhotoExt = photoFile.name.split(".").pop();
+      const rawPhotoPath = `video-frames/photos/${Date.now()}_${Math.random().toString(36).slice(2, 6)}.${rawPhotoExt}`;
+      const { error: rawPhotoUploadError } = await supabase.storage
         .from("product-images")
-        .upload(mindPath, mindBlob, { contentType: "application/octet-stream" });
+        .upload(rawPhotoPath, photoFile);
       
-      if (mindUploadError) throw mindUploadError;
-      const targetMindUrl = `${SUPABASE_URL}/storage/v1/object/public/product-images/${mindPath}`;
+      if (rawPhotoUploadError) throw rawPhotoUploadError;
+      const targetPhotoUrl = `${SUPABASE_URL}/storage/v1/object/public/product-images/${rawPhotoPath}`;
 
-      // 3. Upload .mp4 video file
+      // 2. Upload .mp4 video file
       setUploadProgress("Uploading overlay video (.mp4)...");
       const videoExt = videoFile.name.split(".").pop();
       const videoPath = `video-frames/videos/${Date.now()}_${Math.random().toString(36).slice(2, 6)}.${videoExt}`;
@@ -1142,20 +1226,23 @@ const AdminVideoFrames = ({ isAdmin }: { isAdmin: boolean }) => {
       if (videoUploadError) throw videoUploadError;
       const videoUrl = `${SUPABASE_URL}/storage/v1/object/public/product-images/${videoPath}`;
 
-      // 4. Insert row into public.video_frames mapped to creator UID
+      // 3. Insert new row into public.video_frames (holding raw photo URL temporarily as target_mind_url)
       setUploadProgress("Registering frame details in database...");
       const { error: insertError } = await supabase
         .from("video_frames" as any)
         .insert({
           frame_name: name.trim(),
-          target_mind_url: targetMindUrl,
+          target_mind_url: targetPhotoUrl,
           video_url: videoUrl,
           created_by: user.id,
         } as any);
 
       if (insertError) throw insertError;
 
-      alert("AR Frame created successfully with in-browser compiled tracking points!");
+      // 4. Trigger synchronous combined compilation and propagation
+      await syncCompiledTargets(true);
+
+      alert("AR Frame created successfully with dynamically compiled multi-target coordinates!");
       setName("");
       setPhotoFile(null);
       setVideoFile(null);
@@ -1257,7 +1344,19 @@ const AdminVideoFrames = ({ isAdmin }: { isAdmin: boolean }) => {
                 <div className="space-y-2">
                   <h4 className="font-display text-lg font-bold text-foreground truncate">{frame.frame_name}</h4>
                   <div className="text-xs text-muted-foreground space-y-1 font-mono bg-muted/30 p-3 rounded-xl border border-border/50">
-                    <p className="truncate"><strong>Target:</strong> <a href={frame.target_mind_url} target="_blank" rel="noreferrer" className="text-primary hover:underline">{frame.target_mind_url.split('/').pop()}</a></p>
+                    <p className="truncate">
+                      <strong>Target:</strong>{" "}
+                      {(() => {
+                        const rawTarget = frame.target_mind_url;
+                        const targetUrl = rawTarget.includes("|") ? rawTarget.split("|")[0] : rawTarget;
+                        const filename = targetUrl.split("/").pop();
+                        return (
+                          <a href={targetUrl} target="_blank" rel="noreferrer" className="text-primary hover:underline">
+                            {filename}
+                          </a>
+                        );
+                      })()}
+                    </p>
                     <p className="truncate"><strong>Video:</strong> <a href={frame.video_url} target="_blank" rel="noreferrer" className="text-primary hover:underline">{frame.video_url.split('/').pop()}</a></p>
                     <p className="font-sans text-[10px] text-muted-foreground/80 mt-1 block"><strong>Created:</strong> {new Date(frame.created_at).toLocaleDateString()}</p>
                   </div>
