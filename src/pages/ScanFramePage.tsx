@@ -12,31 +12,7 @@ const ScanFramePage = () => {
   const [detectedFrame, setDetectedFrame] = useState<any | null>(null);
   const [arMode, setArMode] = useState<"popup" | "3d">("popup");
   const [videoAspectRatios, setVideoAspectRatios] = useState<Record<string, number>>({});
-  // Global interaction listener to prime audio context unmuted on first tap anywhere
-  useEffect(() => {
-    const handleGlobalClick = () => {
-      frames.forEach((frame) => {
-        const video = document.getElementById(`video-${frame.id}`) as HTMLVideoElement;
-        if (video) {
-          try {
-            video.muted = false;
-            video.play().then(() => video.pause()).catch(() => {});
-          } catch (e) {}
-        }
-      });
-      console.log("[ScanFramePage] Audio primed via global gesture.");
-      window.removeEventListener("click", handleGlobalClick);
-      window.removeEventListener("touchstart", handleGlobalClick);
-    };
 
-    window.addEventListener("click", handleGlobalClick);
-    window.addEventListener("touchstart", handleGlobalClick);
-
-    return () => {
-      window.removeEventListener("click", handleGlobalClick);
-      window.removeEventListener("touchstart", handleGlobalClick);
-    };
-  }, [frames]);
 
   // Inject custom CSS to isolate A-Frame / MindAR and prevent Vite root container offsets or transition delays
   useEffect(() => {
@@ -237,6 +213,32 @@ const ScanFramePage = () => {
       return (data ?? []) as any[];
     },
   });
+
+  // Global interaction listener to prime audio context unmuted on first tap anywhere
+  useEffect(() => {
+    const handleGlobalClick = () => {
+      frames.forEach((frame) => {
+        const video = document.getElementById(`video-${frame.id}`) as HTMLVideoElement;
+        if (video) {
+          try {
+            video.muted = false;
+            video.play().then(() => video.pause()).catch(() => {});
+          } catch (e) {}
+        }
+      });
+      console.log("[ScanFramePage] Audio primed via global gesture.");
+      window.removeEventListener("click", handleGlobalClick);
+      window.removeEventListener("touchstart", handleGlobalClick);
+    };
+
+    window.addEventListener("click", handleGlobalClick);
+    window.addEventListener("touchstart", handleGlobalClick);
+
+    return () => {
+      window.removeEventListener("click", handleGlobalClick);
+      window.removeEventListener("touchstart", handleGlobalClick);
+    };
+  }, [frames]);
 
   // 3. Register targetFound and targetLost events independently for each frame asset
   useEffect(() => {
