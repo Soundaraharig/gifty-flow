@@ -9,6 +9,7 @@ const ScanFramePage = () => {
   const [scriptsLoaded, setScriptsLoaded] = useState(false);
   const [activeTargetIndex, setActiveTargetIndex] = useState<number | null>(null);
   const [detectedFrame, setDetectedFrame] = useState<any | null>(null);
+  const [arMode, setArMode] = useState<"popup" | "3d">("popup");
 
   // Inject custom CSS to isolate A-Frame / MindAR and prevent Vite root container offsets or transition delays
   useEffect(() => {
@@ -203,22 +204,65 @@ const ScanFramePage = () => {
   useEffect(() => {
     if (!scriptsLoaded || !frames || frames.length === 0) return;
 
-    console.log(`Initializing event tracking for ${frames.length} active frame items...`);
+    console.log(`Initializing event tracking for ${frames.length} active frame items in [${arMode}] mode...`);
     const cleanups: (() => void)[] = [];
 
     frames.forEach((frame, index) => {
       const anchor = document.getElementById(`targetAnchor-${index}`);
+      const video3d = document.getElementById(`video-${frame.id}`) as HTMLVideoElement;
 
       if (anchor) {
         const handleFound = () => {
-          console.log(`[Multi-Scanner] Target detected: "${frame.frame_name}" (Index: ${index}). Open popup player.`);
+          console.log(`[Multi-Scanner] Target detected: "${frame.frame_name}" (Index: ${index}). Mode: ${arMode}`);
           setActiveTargetIndex(index);
-          setDetectedFrame(frame);
+          
+          if (arMode === "popup") {
+            // Close any playing 3D videos
+            frames.forEach((f) => {
+              const v = document.getElementById(`video-${f.id}`) as HTMLVideoElement;
+              if (v) try { v.pause(); } catch(e){}
+            });
+            // Open React Popup player
+            setDetectedFrame(frame);
+          } else {
+            // arMode === "3d"
+            // Make sure React popup is closed
+            setDetectedFrame(null);
+
+            // Pause all other 3D videos
+            frames.forEach((otherFrame) => {
+              if (otherFrame.id !== frame.id) {
+                const otherVid = document.getElementById(`video-${otherFrame.id}`) as HTMLVideoElement;
+                if (otherVid) {
+                  try {
+                    otherVid.pause();
+                  } catch (e) {
+                    console.warn(`Error pausing non-active video:`, e);
+                  }
+                }
+              }
+            });
+
+            // Play the matching 3D overlay video
+            if (video3d) {
+              video3d.play().catch((err) => {
+                console.warn(`Media play failed or was delayed by browser context policy:`, err);
+              });
+            }
+          }
         };
 
         const handleLost = () => {
           console.log(`[Multi-Scanner] Target lost: "${frame.frame_name}" (Index: ${index}).`);
           setActiveTargetIndex((prev) => (prev === index ? null : prev));
+          
+          if (arMode === "3d" && video3d) {
+            try {
+              video3d.pause();
+            } catch (e) {
+              console.warn("Error pausing video element:", e);
+            }
+          }
         };
 
         anchor.addEventListener("targetFound", handleFound);
@@ -234,7 +278,43 @@ const ScanFramePage = () => {
     return () => {
       cleanups.forEach((cleanup) => cleanup());
     };
-  }, [scriptsLoaded, frames]);
+  }, [scriptsLoaded, frames, arMode]);
+
+  // 4. Handle seamless transitions when arMode toggles under an active track
+  useEffect(() => {
+    if (!scriptsLoaded || !frames || frames.length === 0) return;
+
+    if (activeTargetIndex !== null) {
+      const activeFrame = frames[activeTargetIndex];
+      const video3d = document.getElementById(`video-${activeFrame.id}`) as HTMLVideoElement;
+
+      if (arMode === "popup") {
+        // Stop the 3D video playback
+        if (video3d) {
+          try {
+            video3d.pause();
+          } catch (e) {}
+        }
+        // Seamlessly open the React Popup player
+        setDetectedFrame(activeFrame);
+      } else {
+        // arMode === "3d"
+        // Close the React Popup
+        setDetectedFrame(null);
+        // Seamlessly start the 3D tracking video
+        if (video3d) {
+          video3d.play().catch((err) => {
+            console.warn("Seamless play failed:", err);
+          });
+        }
+      }
+    } else {
+      // No active track, make sure popup is closed if mode is 3D
+      if (arMode === "3d") {
+        setDetectedFrame(null);
+      }
+    }
+  }, [arMode, activeTargetIndex, frames, scriptsLoaded]);
 
   const totalError = dbError instanceof Error ? dbError.message : dbError ? String(dbError) : null;
 
@@ -300,14 +380,51 @@ const ScanFramePage = () => {
 
   return (
     <div className="fixed inset-0 w-screen h-screen z-[9999] bg-black overflow-visible">
-      {/* Upper Control Bar (Exit navigation) */}
-      <button
-        onClick={() => navigate(-1)}
-        className="absolute top-4 left-4 z-[10000] p-3 rounded-full bg-black/60 hover:bg-black/80 text-white border border-white/20 transition-all shadow-md hover:scale-105 active:scale-95 flex items-center gap-2 text-sm font-semibold"
-        title="Exit Scanner"
-      >
-        <ArrowLeft size={18} /> Exit
-      </button>
+      {/* Upper Control Bar (Exit navigation & AR Switch) */}
+      <div className="absolute top-4 left-4 z-[10000] flex items-center gap-3">
+        <button
+          onClick={() => navigate(-1)}
+          className="p-3 rounded-full bg-black/60 hover:bg-black/80 text-white border border-white/20 transition-all shadow-md hover:scale-105 active:scale-95 flex items-center justify-center text-sm font-semibold"
+          title="Exit Scanner"
+        >
+          <ArrowLeft size={18} />
+        </button>
+
+        {/* Dynamic Mode Switch Capsule */}
+        <div className="bg-black/60 border border-white/20 p-0.5 rounded-full backdrop-blur-md flex items-center gap-1 shadow-md">
+          <button
+            onClick={() => {
+              setArMode("popup");
+              setDetectedFrame(null);
+              // Pause all 3D videos
+              frames.forEach((f) => {
+                const v = document.getElementById(`video-${f.id}`) as HTMLVideoElement;
+                if (v) try { v.pause(); } catch(e){}
+              });
+            }}
+            className={`px-3 py-1.5 rounded-full text-[10px] sm:text-xs font-bold transition-all flex items-center gap-1 ${
+              arMode === "popup"
+                ? "bg-rose-500 text-white shadow-rose"
+                : "text-white/60 hover:text-white"
+            }`}
+          >
+            <span>📱 Pop-up</span>
+          </button>
+          <button
+            onClick={() => {
+              setArMode("3d");
+              setDetectedFrame(null);
+            }}
+            className={`px-3 py-1.5 rounded-full text-[10px] sm:text-xs font-bold transition-all flex items-center gap-1 ${
+              arMode === "3d"
+                ? "bg-rose-500 text-white shadow-rose"
+                : "text-white/60 hover:text-white"
+            }`}
+          >
+            <span>🕶️ 3D Mode</span>
+          </button>
+        </div>
+      </div>
 
       {/* Floating Status Display */}
       <div className="absolute top-4 right-4 z-[10000] bg-black/60 border border-white/10 px-4 py-2 rounded-full backdrop-blur-md flex items-center gap-2">
@@ -354,15 +471,39 @@ const ScanFramePage = () => {
         vr-mode-ui="enabled: false"
         device-orientation-permission-ui="enabled: false"
       >
+        <a-assets>
+          {frames.map((frame) => (
+            <video
+              key={frame.id}
+              id={`video-${frame.id}`}
+              src={frame.video_url}
+              preload="auto"
+              loop
+              playsInline
+              webkit-playsinline="true"
+              crossOrigin="anonymous"
+            />
+          ))}
+        </a-assets>
+
         <a-camera position="0 0 0" look-controls="enabled: false" />
 
-        {/* Sequential mapping of targets (we keep these empty because we project in React pop-up!) */}
+        {/* Sequential mapping of targets */}
         {frames.map((frame, index) => (
           <a-entity
             key={frame.id}
             mindar-image-target={`targetIndex: ${index}`}
             id={`targetAnchor-${index}`}
-          />
+          >
+            <a-video
+              src={`#video-${frame.id}`}
+              width="1"
+              height="0.5625"
+              position="0 0 0"
+              rotation="0 0 0"
+              visible={arMode === "3d" ? "true" : "false"}
+            />
+          </a-entity>
         ))}
       </a-scene>
 
@@ -394,7 +535,7 @@ const ScanFramePage = () => {
               <video
                 src={detectedFrame.video_url}
                 autoPlay
-                controls
+                loop
                 playsInline
                 preload="auto"
                 className="ar-popup-video w-full h-auto block max-h-[50vh] rounded-xl"

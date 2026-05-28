@@ -9,6 +9,8 @@ const ARFrameScanner = () => {
   const navigate = useNavigate();
   const [scriptsLoaded, setScriptsLoaded] = useState(false);
   const [isTracking, setIsTracking] = useState(false);
+  const [isTargetDetected, setIsTargetDetected] = useState(false);
+  const [arMode, setArMode] = useState<"popup" | "3d">("popup");
 
   // Inject custom CSS to isolate A-Frame / MindAR and prevent Vite root container offsets or transition delays
   useEffect(() => {
@@ -215,12 +217,13 @@ const ARFrameScanner = () => {
     if (!anchor) return;
 
     const handleFound = () => {
-      console.log("AR Target detected! Opening premium pop-up player.");
-      setIsTracking(true);
+      console.log("AR Target detected! Mode active: " + arMode);
+      setIsTargetDetected(true);
     };
 
     const handleLost = () => {
       console.log("AR Target lost.");
+      setIsTargetDetected(false);
     };
 
     anchor.addEventListener("targetFound", handleFound);
@@ -230,7 +233,45 @@ const ARFrameScanner = () => {
       anchor.removeEventListener("targetFound", handleFound);
       anchor.removeEventListener("targetLost", handleLost);
     };
-  }, [scriptsLoaded, data]);
+  }, [scriptsLoaded, data, arMode]);
+
+  // Coordinate mode changes and target detections seamlessly
+  useEffect(() => {
+    if (!scriptsLoaded || !data) return;
+
+    const video3d = document.getElementById("frameVideo") as HTMLVideoElement;
+
+    if (isTargetDetected) {
+      if (arMode === "popup") {
+        // Pause 3D video if active
+        if (video3d) {
+          try {
+            video3d.pause();
+          } catch (e) {}
+        }
+        // Open premium React Pop-up player
+        setIsTracking(true);
+      } else {
+        // arMode === "3d"
+        // Hide React Pop-up
+        setIsTracking(false);
+        // Play 3D video
+        if (video3d) {
+          video3d.play().catch((err) => {
+            console.warn("Seamless AR video play failed:", err);
+          });
+        }
+      }
+    } else {
+      // Target lost
+      setIsTracking(false);
+      if (video3d) {
+        try {
+          video3d.pause();
+        } catch (e) {}
+      }
+    }
+  }, [scriptsLoaded, data, isTargetDetected, arMode]);
 
   const totalError = dbError instanceof Error ? dbError.message : dbError ? String(dbError) : null;
 
@@ -273,18 +314,52 @@ const ARFrameScanner = () => {
   // Render A-Frame Scene once ready with top-level container matching raw screen bounds for maximum overlay z-index visibility
   return (
     <div className="fixed inset-0 w-screen h-screen z-[9999] bg-black overflow-visible">
-      {/* Absolute back controls overlay */}
-      <button
-        onClick={() => navigate(-1)}
-        className="absolute top-4 left-4 z-[10000] p-3 rounded-full bg-black/60 hover:bg-black/80 text-white border border-white/20 transition-all shadow-md hover:scale-105 active:scale-95 flex items-center gap-2 text-sm font-semibold"
-        title="Exit Scanner"
-      >
-        <ArrowLeft size={18} /> Exit
-      </button>
+      {/* Upper Control Bar (Exit navigation & AR Switch) */}
+      <div className="absolute top-4 left-4 z-[10000] flex items-center gap-3">
+        <button
+          onClick={() => navigate(-1)}
+          className="p-3 rounded-full bg-black/60 hover:bg-black/80 text-white border border-white/20 transition-all shadow-md hover:scale-105 active:scale-95 flex items-center justify-center text-sm font-semibold"
+          title="Exit Scanner"
+        >
+          <ArrowLeft size={18} />
+        </button>
+
+        {/* Dynamic Mode Switch Capsule */}
+        <div className="bg-black/60 border border-white/20 p-0.5 rounded-full backdrop-blur-md flex items-center gap-1 shadow-md">
+          <button
+            onClick={() => {
+              setArMode("popup");
+              setIsTracking(false);
+              const v = document.getElementById("frameVideo") as HTMLVideoElement;
+              if (v) try { v.pause(); } catch(e){}
+            }}
+            className={`px-3 py-1.5 rounded-full text-[10px] sm:text-xs font-bold transition-all flex items-center gap-1 ${
+              arMode === "popup"
+                ? "bg-rose-500 text-white shadow-rose"
+                : "text-white/60 hover:text-white"
+            }`}
+          >
+            <span>📱 Pop-up</span>
+          </button>
+          <button
+            onClick={() => {
+              setArMode("3d");
+              setIsTracking(false);
+            }}
+            className={`px-3 py-1.5 rounded-full text-[10px] sm:text-xs font-bold transition-all flex items-center gap-1 ${
+              arMode === "3d"
+                ? "bg-rose-500 text-white shadow-rose"
+                : "text-white/60 hover:text-white"
+            }`}
+          >
+            <span>🕶️ 3D Mode</span>
+          </button>
+        </div>
+      </div>
 
       {/* Dynamic glassmorphic scanning box guide overlay - hidden when target is active */}
       <div className={`ar-guide-fade absolute inset-0 pointer-events-none flex flex-col items-center justify-center z-[9000] ${
-        isTracking ? "opacity-0 scale-95" : "opacity-100 scale-100"
+        isTargetDetected ? "opacity-0 scale-95" : "opacity-100 scale-100"
       }`}>
         <div className="relative w-64 h-[280px] flex items-center justify-center">
           {/* Glassmorphic Box container */}
@@ -316,10 +391,31 @@ const ARFrameScanner = () => {
         vr-mode-ui="enabled: false"
         device-orientation-permission-ui="enabled: false"
       >
+        <a-assets>
+          <video
+            id="frameVideo"
+            src={data.video_url}
+            preload="auto"
+            loop
+            playsInline
+            webkit-playsinline="true"
+            crossOrigin="anonymous"
+          />
+        </a-assets>
+
         <a-camera position="0 0 0" look-controls="enabled: false" />
 
-        {/* Empty target (we project the video inside the React pop-up overlay instead!) */}
-        <a-entity mindar-image-target="targetIndex: 0" id="targetAnchor" />
+        {/* Target Entity */}
+        <a-entity mindar-image-target="targetIndex: 0" id="targetAnchor">
+          <a-video
+            src="#frameVideo"
+            width="1"
+            height="0.5625"
+            position="0 0 0"
+            rotation="0 0 0"
+            visible={arMode === "3d" ? "true" : "false"}
+          />
+        </a-entity>
       </a-scene>
 
       {/* Fullscreen Video Player Pop-up in natural ratio with active camera background */}
@@ -350,7 +446,7 @@ const ARFrameScanner = () => {
               <video
                 src={data.video_url}
                 autoPlay
-                controls
+                loop
                 playsInline
                 preload="auto"
                 className="ar-popup-video w-full h-auto block max-h-[50vh] rounded-xl"
