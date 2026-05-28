@@ -21,6 +21,9 @@ const Header = () => {
           </span>
         </a>
         <nav className="flex items-center gap-3">
+          <a href="/scan-frame" className="text-sm font-medium text-primary hover:text-primary/80 transition-colors font-semibold px-2 py-1 rounded-md hover:bg-primary/5">
+            Scan Frame
+          </a>
           <a href="/categories" className="hidden md:inline text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
             Categories
           </a>

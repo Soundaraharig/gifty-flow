@@ -22,6 +22,7 @@ import SubscriptionPage from "./pages/SubscriptionPage";
 import NotFound from "./pages/NotFound";
 import ChatAssistantPage from "./pages/ChatAssistantPage";
 import ARFrameScanner from "./components/ARFrameScanner";
+import ScanFramePage from "./pages/ScanFramePage";
 
 const queryClient = new QueryClient();
 
@@ -37,7 +38,7 @@ const App = () => (
             <BrowserRouter>
               <Routes>
                 <Route path="/auth" element={<AuthPage />} />
-                <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+                <Route path="/" element={<Index />} />
                 <Route path="/configure/photo-frames/styles" element={<ProtectedRoute><StyleCollectionPage /></ProtectedRoute>} />
                 <Route path="/configure/photo-frames" element={<ProtectedRoute><ConfiguratorPage /></ProtectedRoute>} />
 
@@ -50,6 +51,7 @@ const App = () => (
                 <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
                 <Route path="/assistant" element={<ChatAssistantPage />} />
                 <Route path="/scan/:frameId" element={<ARFrameScanner />} />
+                <Route path="/scan-frame" element={<ScanFramePage />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
