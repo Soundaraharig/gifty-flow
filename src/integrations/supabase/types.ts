@@ -471,6 +471,7 @@ export type Database = {
       video_frames: {
         Row: {
           created_at: string
+          created_by: string | null
           frame_name: string
           id: string
           target_mind_url: string
@@ -478,6 +479,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          created_by?: string | null
           frame_name: string
           id?: string
           target_mind_url: string
@@ -485,6 +487,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          created_by?: string | null
           frame_name?: string
           id?: string
           target_mind_url?: string

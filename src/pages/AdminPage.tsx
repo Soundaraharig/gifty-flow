@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Header from "@/components/Header";
+import { QRCodeCanvas } from "qrcode.react";
 
 import AdminUsers from "@/components/admin/AdminUsers";
 import AdminSubscriptions from "@/components/admin/AdminSubscriptions";
@@ -64,6 +65,7 @@ const AdminPage = () => {
     { id: "resin", label: "Resin Types" },
     { id: "orders", label: "Orders" },
     { id: "gallery", label: "Gallery Images" },
+    { id: "video-frames", label: "Video Frames" },
   ];
 
   const tabs = isAdmin ? adminTabs : subscriberTabs;
@@ -102,7 +104,7 @@ const AdminPage = () => {
         {tab === "resin" && <AdminResinTypes />}
         {tab === "orders" && <AdminOrders />}
         {tab === "gallery" && <AdminGalleryImages />}
-        {tab === "video-frames" && isAdmin && <AdminVideoFrames />}
+        {tab === "video-frames" && (isAdmin || isSubscriber) && <AdminVideoFrames isAdmin={isAdmin} />}
         {tab === "subscriptions" && isAdmin && <AdminSubscriptions />}
         {tab === "users" && isAdmin && <AdminUsers />}
         {tab === "settings" && isAdmin && <AdminSettings />}
@@ -1020,24 +1022,38 @@ const AdminSettings = () => {
 };
 
 // --- Video Frames AR Admin Curation Panel ---
-const AdminVideoFrames = () => {
+const AdminVideoFrames = ({ isAdmin }: { isAdmin: boolean }) => {
   const qc = useQueryClient();
   const [name, setName] = useState("");
   const [mindFile, setMindFile] = useState<File | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState("");
+  const [activeQrFrame, setActiveQrFrame] = useState<{ id: string; frame_name: string } | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
+  // Retrieve current user ID on mount for ownership checks
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) setCurrentUserId(user.id);
+    });
+  }, []);
+
+  // Fetch AR Frame records (Admins see all; Subscribers see only their own)
   const { data: frames = [], isLoading } = useQuery({
-    queryKey: ["admin_video_frames"],
+    queryKey: ["admin_video_frames", isAdmin, currentUserId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("video_frames" as any)
-        .select("*")
-        .order("created_at", { ascending: false });
+      let query = supabase.from("video_frames" as any).select("*");
+      
+      if (!isAdmin && currentUserId) {
+        query = query.eq("created_by", currentUserId);
+      }
+      
+      const { data, error } = await query.order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as any[];
     },
+    enabled: currentUserId !== null || isAdmin, // Enable query once auth context is resolved or if admin
   });
 
   const deleteMutation = useMutation({
@@ -1064,6 +1080,9 @@ const AdminVideoFrames = () => {
 
     setUploading(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No active authenticated user session was found.");
+
       // 1. Upload .mind target file
       setUploadProgress("Uploading tracking target (.mind)...");
       const mindExt = mindFile.name.split(".").pop();
@@ -1084,7 +1103,7 @@ const AdminVideoFrames = () => {
       if (videoUploadError) throw videoUploadError;
       const videoUrl = `${SUPABASE_URL}/storage/v1/object/public/product-images/${videoPath}`;
 
-      // 3. Insert row into public.video_frames
+      // 3. Insert row into public.video_frames mapped to creator UID
       setUploadProgress("Registering frame details in database...");
       const { error: insertError } = await supabase
         .from("video_frames" as any)
@@ -1092,6 +1111,7 @@ const AdminVideoFrames = () => {
           frame_name: name.trim(),
           target_mind_url: targetMindUrl,
           video_url: videoUrl,
+          created_by: user.id,
         } as any);
 
       if (insertError) throw insertError;
@@ -1124,15 +1144,15 @@ const AdminVideoFrames = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center text-left">
         <div>
           <h2 className="font-display text-xl font-bold text-foreground">Video Frames (AR)</h2>
-          <p className="text-sm text-muted-foreground">Manage and upload custom AR target configurations for physical frames.</p>
+          <p className="text-sm text-muted-foreground">Manage and configure custom AR target layouts for physical gift frames.</p>
         </div>
       </div>
 
-      {/* Creation Form */}
-      <form onSubmit={handleCreate} className="p-5 rounded-xl border border-border bg-card space-y-4">
+      {/* Creation Form (Visible to both Admins and Subscribers) */}
+      <form onSubmit={handleCreate} className="p-5 rounded-xl border border-border bg-card space-y-4 text-left">
         <h3 className="font-semibold text-foreground text-sm">Add New AR Video Frame</h3>
         
         <div className="space-y-2">
@@ -1190,53 +1210,109 @@ const AdminVideoFrames = () => {
         </button>
       </form>
 
-      {/* Frame List */}
+      {/* Frame Cards List */}
       <div>
-        <h3 className="font-semibold text-foreground text-sm mb-3">Active AR Frames</h3>
+        <h3 className="font-semibold text-foreground text-sm mb-3 text-left">Active AR Frames</h3>
         {isLoading ? (
-          <p className="text-muted-foreground text-sm">Loading frames...</p>
+          <p className="text-muted-foreground text-sm text-left">Loading frames...</p>
         ) : frames.length === 0 ? (
           <p className="text-muted-foreground text-sm bg-muted/20 p-4 rounded-xl text-center border border-dashed border-border">No AR frames registered yet.</p>
         ) : (
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {frames.map((frame) => (
-              <div key={frame.id} className="p-4 rounded-xl border border-border bg-card flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
-                <div className="space-y-1 max-w-md overflow-hidden bg-card text-left">
-                  <h4 className="font-semibold text-foreground">{frame.frame_name}</h4>
-                  <div className="text-xs text-muted-foreground space-y-0.5 font-mono">
-                    <p className="truncate"><strong>Target (.mind):</strong> <a href={frame.target_mind_url} target="_blank" rel="noreferrer" className="text-primary hover:underline">{frame.target_mind_url}</a></p>
-                    <p className="truncate"><strong>Video (.mp4):</strong> <a href={frame.video_url} target="_blank" rel="noreferrer" className="text-primary hover:underline">{frame.video_url}</a></p>
-                    <p className="font-sans text-[11px] text-muted-foreground/80 mt-1"><strong>Created:</strong> {new Date(frame.created_at).toLocaleString()}</p>
+              <div key={frame.id} className="p-5 rounded-2xl border border-border bg-card shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col justify-between space-y-4 text-left">
+                <div className="space-y-2">
+                  <h4 className="font-display text-lg font-bold text-foreground truncate">{frame.frame_name}</h4>
+                  <div className="text-xs text-muted-foreground space-y-1 font-mono bg-muted/30 p-3 rounded-xl border border-border/50">
+                    <p className="truncate"><strong>Target:</strong> <a href={frame.target_mind_url} target="_blank" rel="noreferrer" className="text-primary hover:underline">{frame.target_mind_url.split('/').pop()}</a></p>
+                    <p className="truncate"><strong>Video:</strong> <a href={frame.video_url} target="_blank" rel="noreferrer" className="text-primary hover:underline">{frame.video_url.split('/').pop()}</a></p>
+                    <p className="font-sans text-[10px] text-muted-foreground/80 mt-1 block"><strong>Created:</strong> {new Date(frame.created_at).toLocaleDateString()}</p>
                   </div>
                 </div>
                 
-                <div className="flex gap-2 flex-wrap shrink-0">
+                <div className="flex flex-wrap gap-2 pt-2 border-t border-border/50">
                   <button
                     onClick={() => copyScannerLink(frame.id)}
-                    className="px-3 py-1.5 rounded-full border border-border bg-background hover:bg-muted text-xs font-semibold text-foreground transition-all"
+                    className="flex-1 min-w-[70px] px-3 py-2 rounded-full border border-border bg-background hover:bg-muted text-xs font-semibold text-foreground transition-all flex items-center justify-center gap-1"
+                    title="Copy direct scanner link"
                   >
-                    🔗 Copy Link
+                    🔗 Link
+                  </button>
+                  <button
+                    onClick={() => setActiveQrFrame({ id: frame.id, frame_name: frame.frame_name })}
+                    className="flex-1 min-w-[90px] px-3 py-2 rounded-full bg-primary/10 text-primary hover:bg-primary/20 text-xs font-bold transition-all flex items-center justify-center gap-1"
+                    title="Generate printable QR Code"
+                  >
+                    🖼️ QR Code
                   </button>
                   <a
                     href={`/scan/${frame.id}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="px-3 py-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 text-xs font-semibold transition-all flex items-center gap-1"
+                    className="px-3 py-2 rounded-full bg-accent/15 text-accent-foreground hover:bg-accent/25 text-xs font-bold transition-all flex items-center justify-center"
+                    title="Open live AR experience"
                   >
                     👁️ Test
                   </a>
-                  <button
-                    onClick={() => { if (confirm("Are you sure you want to delete this frame and RLS records?")) deleteMutation.mutate(frame.id); }}
-                    className="px-3 py-1.5 rounded-full border border-destructive/20 bg-destructive/5 hover:bg-destructive/10 text-xs font-semibold text-destructive transition-all"
-                  >
-                    🗑️ Delete
-                  </button>
+                  {(isAdmin || frame.created_by === currentUserId) && (
+                    <button
+                      onClick={() => { if (confirm("Are you sure you want to delete this frame and RLS records?")) deleteMutation.mutate(frame.id); }}
+                      className="px-3 py-2 rounded-full border border-destructive/20 bg-destructive/5 hover:bg-destructive/10 text-xs font-bold text-destructive transition-all flex items-center justify-center"
+                      title="Delete Frame"
+                    >
+                      🗑️
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Printable QR Code Modal */}
+      {activeQrFrame && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-card border border-border p-6 rounded-2xl max-w-sm w-full shadow-2xl text-center space-y-4 animate-in fade-in zoom-in-95 duration-200">
+            <h3 className="font-display text-lg font-bold text-foreground">AR Frame QR Code</h3>
+            <p className="text-xs text-muted-foreground">Scan to open the live experience for: <span className="font-semibold text-foreground">{activeQrFrame.frame_name}</span></p>
+            
+            <div className="bg-white p-4 rounded-xl inline-block border border-border">
+              <QRCodeCanvas
+                id={`qr-${activeQrFrame.id}`}
+                value={`https://zero-gif.lovable.app/scan/${activeQrFrame.id}`}
+                size={220}
+                level="H"
+                includeMargin={true}
+              />
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  const canvas = document.getElementById(`qr-${activeQrFrame.id}`) as HTMLCanvasElement;
+                  if (canvas) {
+                    const url = canvas.toDataURL("image/png");
+                    const link = document.createElement("a");
+                    link.download = `qr-${activeQrFrame.frame_name.toLowerCase().replace(/\s+/g, "-")}.png`;
+                    link.href = url;
+                    link.click();
+                  }
+                }}
+                className="flex-1 px-4 py-2.5 rounded-full bg-primary text-primary-foreground text-sm font-semibold hover:opacity-95 transition-opacity"
+              >
+                Download PNG
+              </button>
+              <button
+                onClick={() => setActiveQrFrame(null)}
+                className="px-4 py-2.5 rounded-full border border-border hover:bg-muted text-sm font-semibold text-foreground transition-all"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
