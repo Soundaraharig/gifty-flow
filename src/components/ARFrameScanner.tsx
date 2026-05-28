@@ -152,12 +152,19 @@ const ARFrameScanner = () => {
       const aframeElements = document.querySelectorAll(".a-canvas, .a-loader-title, .a-enter-vr");
       aframeElements.forEach((el) => el.remove());
 
-      // Reset body and html layout properties to original values
+      // Reset body and html layout properties to original values to restore normal scrolling and layout
       document.body.style.removeProperty("overflow");
       document.body.style.removeProperty("height");
       document.body.style.removeProperty("width");
       document.body.style.removeProperty("margin");
+      document.body.style.removeProperty("padding");
       document.body.classList.remove("a-body");
+      
+      document.documentElement.style.removeProperty("overflow");
+      document.documentElement.style.removeProperty("height");
+      document.documentElement.style.removeProperty("width");
+      document.documentElement.style.removeProperty("margin");
+      document.documentElement.style.removeProperty("padding");
       document.documentElement.classList.remove("a-html");
     };
   }, []);
