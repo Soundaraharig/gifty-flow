@@ -8,6 +8,7 @@ const ScanFramePage = () => {
   const navigate = useNavigate();
   const [scriptsLoaded, setScriptsLoaded] = useState(false);
   const [activeTargetIndex, setActiveTargetIndex] = useState<number | null>(null);
+  const [detectedFrame, setDetectedFrame] = useState<any | null>(null);
 
   // Inject custom CSS to isolate A-Frame / MindAR and prevent Vite root container offsets or transition delays
   useEffect(() => {
@@ -188,41 +189,17 @@ const ScanFramePage = () => {
 
     frames.forEach((frame, index) => {
       const anchor = document.getElementById(`targetAnchor-${index}`);
-      const video = document.getElementById(`video-${frame.id}`) as HTMLVideoElement;
 
-      if (anchor && video) {
+      if (anchor) {
         const handleFound = () => {
-          console.log(`[Multi-Scanner] Target detected: "${frame.frame_name}" (Index: ${index}). Play video.`);
+          console.log(`[Multi-Scanner] Target detected: "${frame.frame_name}" (Index: ${index}). Open popup player.`);
           setActiveTargetIndex(index);
-          
-          // Stop all other running overlay video assets to prevent concurrent audio playbacks
-          frames.forEach((otherFrame) => {
-            if (otherFrame.id !== frame.id) {
-              const otherVid = document.getElementById(`video-${otherFrame.id}`) as HTMLVideoElement;
-              if (otherVid) {
-                try {
-                  otherVid.pause();
-                } catch (e) {
-                  console.warn(`Error pausing non-active video:`, e);
-                }
-              }
-            }
-          });
-
-          // Play the matching overlay video
-          video.play().catch((err) => {
-            console.warn(`Media play failed or was delayed by browser context policy:`, err);
-          });
+          setDetectedFrame(frame);
         };
 
         const handleLost = () => {
-          console.log(`[Multi-Scanner] Target lost: "${frame.frame_name}" (Index: ${index}). Pause video.`);
+          console.log(`[Multi-Scanner] Target lost: "${frame.frame_name}" (Index: ${index}).`);
           setActiveTargetIndex((prev) => (prev === index ? null : prev));
-          try {
-            video.pause();
-          } catch (e) {
-            console.warn("Error pausing video element:", e);
-          }
         };
 
         anchor.addEventListener("targetFound", handleFound);
@@ -358,40 +335,58 @@ const ScanFramePage = () => {
         vr-mode-ui="enabled: false"
         device-orientation-permission-ui="enabled: false"
       >
-        {/* Dynamic loading of video assets */}
-        <a-assets>
-          {frames.map((frame) => (
-            <video
-              key={frame.id}
-              id={`video-${frame.id}`}
-              src={frame.video_url}
-              preload="auto"
-              loop={true}
-              crossOrigin="anonymous"
-              playsInline
-              webkit-playsinline="true"
-            />
-          ))}
-        </a-assets>
-
         <a-camera position="0 0 0" look-controls="enabled: false" />
 
-        {/* Sequential mapping of targets to their matching video overlays */}
+        {/* Sequential mapping of targets (we keep these empty because we project in React pop-up!) */}
         {frames.map((frame, index) => (
           <a-entity
             key={frame.id}
             mindar-image-target={`targetIndex: ${index}`}
             id={`targetAnchor-${index}`}
-          >
-            <a-video
-              src={`#video-${frame.id}`}
-              width="1"
-              height="0.5625"
-              position="0 0 0"
-            />
-          </a-entity>
+          />
         ))}
       </a-scene>
+
+      {/* Fullscreen Video Player Pop-up in exact natural uploaded ratio */}
+      {detectedFrame && (
+        <div className="fixed inset-0 z-[100000] bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-4">
+          {/* Header Bar */}
+          <div className="w-full max-w-2xl flex items-center justify-between mb-4 px-2">
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>
+              </span>
+              <h4 className="text-white font-display text-base sm:text-lg font-bold truncate max-w-[200px] sm:max-w-md">
+                {detectedFrame.frame_name}
+              </h4>
+            </div>
+            <button
+              onClick={() => setDetectedFrame(null)}
+              className="px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/20 transition-all font-semibold text-xs sm:text-sm flex items-center gap-1.5 active:scale-95 shadow-md"
+            >
+              ✕ Close Player
+            </button>
+          </div>
+
+          {/* Video Container (plays beautifully at exact uploaded ratio!) */}
+          <div className="relative w-full max-w-2xl bg-black/40 rounded-2xl overflow-hidden border border-white/10 shadow-2xl flex items-center justify-center p-1">
+            <video
+              src={detectedFrame.video_url}
+              autoPlay
+              controls
+              playsInline
+              className="w-full max-h-[70vh] rounded-2xl"
+              style={{ objectFit: "contain" }}
+            />
+          </div>
+
+          {/* Glowing bottom tag */}
+          <p className="text-white/40 text-[10px] font-sans mt-4 uppercase tracking-widest animate-pulse">
+            Zero Gifts • Premium AR Experience
+          </p>
+        </div>
+      )}
     </div>
   );
 };

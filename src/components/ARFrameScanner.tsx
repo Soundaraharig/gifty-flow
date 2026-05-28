@@ -9,7 +9,6 @@ const ARFrameScanner = () => {
   const navigate = useNavigate();
   const [scriptsLoaded, setScriptsLoaded] = useState(false);
   const [isTracking, setIsTracking] = useState(false);
-  const [videoAspect, setVideoAspect] = useState<{ width: number; height: number }>({ width: 1, height: 1.4 });
 
   // Inject custom CSS to isolate A-Frame / MindAR and prevent Vite root container offsets or transition delays
   useEffect(() => {
@@ -188,27 +187,21 @@ const ARFrameScanner = () => {
     enabled: !!frameId,
   });
 
-  // Bind the play/pause handlers on the target anchor element
+  // Bind the target detection handler on the target anchor element
   useEffect(() => {
     if (!scriptsLoaded || !data) return;
 
     const anchor = document.getElementById("targetAnchor");
-    const video = document.getElementById("frameVideo") as HTMLVideoElement;
 
-    if (!anchor || !video) return;
+    if (!anchor) return;
 
     const handleFound = () => {
-      console.log("AR Target detected! Starting media playback.");
+      console.log("AR Target detected! Opening premium pop-up player.");
       setIsTracking(true);
-      video.play().catch((err) => {
-        console.warn("Media playback was interrupted by user or browser rules:", err);
-      });
     };
 
     const handleLost = () => {
-      console.log("AR Target lost. Pausing video playback.");
-      setIsTracking(false);
-      video.pause();
+      console.log("AR Target lost.");
     };
 
     anchor.addEventListener("targetFound", handleFound);
@@ -304,35 +297,52 @@ const ARFrameScanner = () => {
         vr-mode-ui="enabled: false"
         device-orientation-permission-ui="enabled: false"
       >
-        <a-assets>
-          <video
-            id="frameVideo"
-            src={data.video_url}
-            preload="auto"
-            loop={true}
-            crossOrigin="anonymous"
-            playsInline
-            webkit-playsinline="true"
-            onLoadedMetadata={(e) => {
-              const video = e.currentTarget;
-              const aspect = video.videoHeight / video.videoWidth;
-              console.log(`[Aspect Track] Video dimensions: ${video.videoWidth}x${video.videoHeight}, Aspect: ${aspect}`);
-              setVideoAspect({ width: 1, height: aspect });
-            }}
-          />
-        </a-assets>
-
         <a-camera position="0 0 0" look-controls="enabled: false" />
 
-        <a-entity mindar-image-target="targetIndex: 0" id="targetAnchor">
-          <a-video
-            src="#frameVideo"
-            width={videoAspect.width}
-            height={videoAspect.height}
-            position="0 0 0"
-          />
-        </a-entity>
+        {/* Empty target (we project the video inside the React pop-up overlay instead!) */}
+        <a-entity mindar-image-target="targetIndex: 0" id="targetAnchor" />
       </a-scene>
+
+      {/* Fullscreen Video Player Pop-up in natural ratio */}
+      {isTracking && (
+        <div className="fixed inset-0 z-[100000] bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-4">
+          {/* Upper Header Control */}
+          <div className="w-full max-w-2xl flex items-center justify-between mb-4 px-2">
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>
+              </span>
+              <h4 className="text-white font-display text-base sm:text-lg font-bold truncate max-w-[200px] sm:max-w-md">
+                {data.frame_name}
+              </h4>
+            </div>
+            <button
+              onClick={() => setIsTracking(false)}
+              className="px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/20 transition-all font-semibold text-xs sm:text-sm flex items-center gap-1.5 active:scale-95 shadow-md"
+            >
+              ✕ Close Player
+            </button>
+          </div>
+
+          {/* Video element container (plays beautifully at exact uploaded ratio!) */}
+          <div className="relative w-full max-w-2xl bg-black/40 rounded-2xl overflow-hidden border border-white/10 shadow-2xl flex items-center justify-center p-1">
+            <video
+              src={data.video_url}
+              autoPlay
+              controls
+              playsInline
+              className="w-full max-h-[70vh] rounded-2xl"
+              style={{ objectFit: "contain" }}
+            />
+          </div>
+
+          {/* Prompt */}
+          <p className="text-white/40 text-[10px] font-sans mt-4 uppercase tracking-widest animate-pulse">
+            Zero Gifts • Premium AR Experience
+          </p>
+        </div>
+      )}
     </div>
   );
 };
