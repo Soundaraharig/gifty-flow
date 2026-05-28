@@ -506,8 +506,8 @@ const ScanFramePage = () => {
           >
             <a-video
               src={`#video-${frame.id}`}
-              width="1"
-              height={String(1 / (videoAspectRatios[frame.id] || (16 / 9)))}
+              width="0.85"
+              height={String(0.85 / (videoAspectRatios[frame.id] || (16 / 9)))}
               position="0 0 0"
               rotation="0 0 0"
               visible={arMode === "3d" ? "true" : "false"}

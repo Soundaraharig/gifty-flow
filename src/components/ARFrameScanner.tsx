@@ -418,8 +418,8 @@ const ARFrameScanner = () => {
         <a-entity mindar-image-target="targetIndex: 0" id="targetAnchor">
           <a-video
             src="#frameVideo"
-            width="1"
-            height={String(1 / aspectRatio)}
+            width="0.85"
+            height={String(0.85 / aspectRatio)}
             position="0 0 0"
             rotation="0 0 0"
             visible={arMode === "3d" ? "true" : "false"}
