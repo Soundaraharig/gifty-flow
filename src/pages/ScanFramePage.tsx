@@ -150,19 +150,38 @@ const ScanFramePage = () => {
       aframeElements.forEach((el) => el.remove());
 
       // Reset inline and class layouts modified by A-Frame/MindAR to restore normal scrolling and layout
-      document.body.style.removeProperty("overflow");
-      document.body.style.removeProperty("height");
-      document.body.style.removeProperty("width");
-      document.body.style.removeProperty("margin");
-      document.body.style.removeProperty("padding");
-      document.body.classList.remove("a-body");
-      
-      document.documentElement.style.removeProperty("overflow");
-      document.documentElement.style.removeProperty("height");
-      document.documentElement.style.removeProperty("width");
-      document.documentElement.style.removeProperty("margin");
-      document.documentElement.style.removeProperty("padding");
-      document.documentElement.classList.remove("a-html");
+      const cleanAllLayouts = () => {
+        console.log("Restoring document scroll layout parameters...");
+        
+        // Remove properties from body
+        document.body.style.removeProperty("overflow");
+        document.body.style.removeProperty("height");
+        document.body.style.removeProperty("width");
+        document.body.style.removeProperty("margin");
+        document.body.style.removeProperty("padding");
+        document.body.classList.remove("a-body");
+        
+        // Remove properties from html documentElement
+        document.documentElement.style.removeProperty("overflow");
+        document.documentElement.style.removeProperty("height");
+        document.documentElement.style.removeProperty("width");
+        document.documentElement.style.removeProperty("margin");
+        document.documentElement.style.removeProperty("padding");
+        document.documentElement.classList.remove("a-html");
+
+        // Force browser layout reflow with scroll enabled
+        document.body.style.overflow = "auto";
+        document.documentElement.style.overflow = "auto";
+      };
+
+      // Call immediately on unmount
+      cleanAllLayouts();
+
+      // Trigger delayed cleanup steps to catch asynchronous A-Frame thread style re-injections
+      setTimeout(cleanAllLayouts, 100);
+      setTimeout(cleanAllLayouts, 300);
+      setTimeout(cleanAllLayouts, 800);
+      setTimeout(cleanAllLayouts, 1500);
     };
   }, []);
 
@@ -347,44 +366,46 @@ const ScanFramePage = () => {
         ))}
       </a-scene>
 
-      {/* Fullscreen Video Player Pop-up in exact natural uploaded ratio */}
+      {/* Fullscreen Video Player Pop-up in exact natural uploaded ratio with active camera background */}
       {detectedFrame && (
-        <div className="fixed inset-0 z-[100000] bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-4">
-          {/* Header Bar */}
-          <div className="w-full max-w-2xl flex items-center justify-between mb-4 px-2">
-            <div className="flex items-center gap-2">
-              <span className="relative flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>
-              </span>
-              <h4 className="text-white font-display text-base sm:text-lg font-bold truncate max-w-[200px] sm:max-w-md">
-                {detectedFrame.frame_name}
-              </h4>
+        <div className="fixed inset-0 z-[100000] bg-black/10 backdrop-blur-[2px] flex flex-col items-center justify-center p-4">
+          <div className="w-full max-w-md bg-black/85 backdrop-blur-md rounded-2xl border border-white/20 shadow-2xl p-4 flex flex-col items-center">
+            {/* Header Bar */}
+            <div className="w-full flex items-center justify-between mb-3 px-1">
+              <div className="flex items-center gap-1.5">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+                </span>
+                <h4 className="text-white font-display text-sm font-bold truncate max-w-[150px]">
+                  {detectedFrame.frame_name}
+                </h4>
+              </div>
+              <button
+                onClick={() => setDetectedFrame(null)}
+                className="px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/10 transition-all font-semibold text-xs flex items-center gap-1 active:scale-95 shadow-md"
+              >
+                ✕ Close Player
+              </button>
             </div>
-            <button
-              onClick={() => setDetectedFrame(null)}
-              className="px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/20 transition-all font-semibold text-xs sm:text-sm flex items-center gap-1.5 active:scale-95 shadow-md"
-            >
-              ✕ Close Player
-            </button>
-          </div>
 
-          {/* Video Container (plays beautifully at exact uploaded ratio!) */}
-          <div className="relative w-full max-w-2xl bg-black/40 rounded-2xl overflow-hidden border border-white/10 shadow-2xl flex items-center justify-center p-1">
-            <video
-              src={detectedFrame.video_url}
-              autoPlay
-              controls
-              playsInline
-              className="w-full max-h-[70vh] rounded-2xl"
-              style={{ objectFit: "contain" }}
-            />
-          </div>
+            {/* Video Container (plays beautifully at exact uploaded ratio!) */}
+            <div className="relative w-full bg-black/40 rounded-xl overflow-hidden border border-white/5 flex items-center justify-center">
+              <video
+                src={detectedFrame.video_url}
+                autoPlay
+                controls
+                playsInline
+                className="w-full max-h-[50vh] rounded-xl"
+                style={{ objectFit: "contain" }}
+              />
+            </div>
 
-          {/* Glowing bottom tag */}
-          <p className="text-white/40 text-[10px] font-sans mt-4 uppercase tracking-widest animate-pulse">
-            Zero Gifts • Premium AR Experience
-          </p>
+            {/* Glowing bottom tag */}
+            <p className="text-white/40 text-[9px] font-sans mt-3 uppercase tracking-widest animate-pulse">
+              Zero Gifts • Premium AR Experience
+            </p>
+          </div>
         </div>
       )}
     </div>
