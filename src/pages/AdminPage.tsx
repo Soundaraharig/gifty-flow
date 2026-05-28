@@ -1301,8 +1301,15 @@ const AdminVideoFrames = ({ isAdmin }: { isAdmin: boolean }) => {
     <div className="space-y-6">
       <div className="flex justify-between items-center text-left">
         <div>
-          <h2 className="font-display text-xl font-bold text-foreground">Video Frames (AR)</h2>
-          <p className="text-sm text-muted-foreground">Manage and configure custom AR target layouts for physical gift frames.</p>
+          <div className="flex items-center gap-3 flex-wrap">
+            <h2 className="font-display text-xl font-bold text-foreground">Video Frames (AR)</h2>
+            {!isAdmin && (
+              <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-500 border border-rose-500/20">
+                🪙 {profile?.ar_credits ?? 0} Credit{(profile?.ar_credits ?? 0) !== 1 ? "s" : ""} Available
+              </span>
+            )}
+          </div>
+          <p className="text-sm text-muted-foreground mt-1">Manage and configure custom AR target layouts for physical gift frames.</p>
         </div>
       </div>
 
