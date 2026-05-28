@@ -113,7 +113,7 @@ const ARFrameScanner = () => {
 
     return () => {
       console.log("Unmounting AR Scanner: Performing full environment cleanup...");
-      
+
       // Cleanup settings: Shut off tracking systems on exit
       const sceneEl = document.querySelector('a-scene') as any;
       if (sceneEl && sceneEl.systems && sceneEl.systems['mindar-image-system']) {
@@ -158,7 +158,7 @@ const ARFrameScanner = () => {
       // Reset body and html layout properties to original values to restore normal scrolling and layout
       const cleanAllLayouts = () => {
         console.log("Restoring document scroll layout parameters...");
-        
+
         // Remove properties from body
         document.body.style.removeProperty("overflow");
         document.body.style.removeProperty("height");
@@ -166,7 +166,7 @@ const ARFrameScanner = () => {
         document.body.style.removeProperty("margin");
         document.body.style.removeProperty("padding");
         document.body.classList.remove("a-body");
-        
+
         // Remove properties from html documentElement
         document.documentElement.style.removeProperty("overflow");
         document.documentElement.style.removeProperty("height");
@@ -196,7 +196,7 @@ const ARFrameScanner = () => {
     queryKey: ["video_frame", frameId],
     queryFn: async () => {
       if (!frameId) throw new Error("Frame identifier is missing from parameter path.");
-      
+
       const { data, error } = await supabase
         .from("video_frames" as any)
         .select("*")
@@ -249,7 +249,7 @@ const ARFrameScanner = () => {
         if (video3d) {
           try {
             video3d.pause();
-          } catch (e) {}
+          } catch (e) { }
         }
         // Open premium React Pop-up player
         setIsTracking(true);
@@ -270,7 +270,7 @@ const ARFrameScanner = () => {
       if (video3d) {
         try {
           video3d.pause();
-        } catch (e) {}
+        } catch (e) { }
       }
     }
   }, [scriptsLoaded, data, isTargetDetected, arMode]);
@@ -333,13 +333,12 @@ const ARFrameScanner = () => {
               setArMode("popup");
               setIsTracking(false);
               const v = document.getElementById("frameVideo") as HTMLVideoElement;
-              if (v) try { v.pause(); } catch(e){}
+              if (v) try { v.pause(); } catch (e) { }
             }}
-            className={`px-3 py-1.5 rounded-full text-[10px] sm:text-xs font-bold transition-all flex items-center gap-1 ${
-              arMode === "popup"
-                ? "bg-rose-500 text-white shadow-rose"
-                : "text-white/60 hover:text-white"
-            }`}
+            className={`px-3 py-1.5 rounded-full text-[10px] sm:text-xs font-bold transition-all flex items-center gap-1 ${arMode === "popup"
+              ? "bg-rose-500 text-white shadow-rose"
+              : "text-white/60 hover:text-white"
+              }`}
           >
             <span>📱 Pop-up</span>
           </button>
@@ -348,11 +347,10 @@ const ARFrameScanner = () => {
               setArMode("3d");
               setIsTracking(false);
             }}
-            className={`px-3 py-1.5 rounded-full text-[10px] sm:text-xs font-bold transition-all flex items-center gap-1 ${
-              arMode === "3d"
-                ? "bg-rose-500 text-white shadow-rose"
-                : "text-white/60 hover:text-white"
-            }`}
+            className={`px-3 py-1.5 rounded-full text-[10px] sm:text-xs font-bold transition-all flex items-center gap-1 ${arMode === "3d"
+              ? "bg-rose-500 text-white shadow-rose"
+              : "text-white/60 hover:text-white"
+              }`}
           >
             <span>🕶️ 3D Mode</span>
           </button>
@@ -360,9 +358,8 @@ const ARFrameScanner = () => {
       </div>
 
       {/* Dynamic glassmorphic scanning box guide overlay - hidden when target is active */}
-      <div className={`ar-guide-fade absolute inset-0 pointer-events-none flex flex-col items-center justify-center z-[9000] ${
-        isTargetDetected ? "opacity-0 scale-95" : "opacity-100 scale-100"
-      }`}>
+      <div className={`ar-guide-fade absolute inset-0 pointer-events-none flex flex-col items-center justify-center z-[9000] ${isTargetDetected ? "opacity-0 scale-95" : "opacity-100 scale-100"
+        }`}>
         <div className="relative w-64 h-[280px] flex items-center justify-center">
           {/* Glassmorphic Box container */}
           <div className="absolute inset-0 bg-white/[0.02] backdrop-blur-[1px] border border-white/10 rounded-2xl flex flex-col items-center justify-center p-6 text-center shadow-2xl">
@@ -402,6 +399,8 @@ const ARFrameScanner = () => {
             playsInline
             webkit-playsinline="true"
             crossOrigin="anonymous"
+            muted
+            autoPlay
             onLoadedMetadata={(e) => {
               const vid = e.currentTarget;
               if (vid.videoWidth && vid.videoHeight) {

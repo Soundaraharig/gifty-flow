@@ -481,6 +481,8 @@ const ScanFramePage = () => {
               playsInline
               webkit-playsinline="true"
               crossOrigin="anonymous"
+              muted
+              autoPlay
               onLoadedMetadata={(e) => {
                 const vid = e.currentTarget;
                 if (vid.videoWidth && vid.videoHeight) {
