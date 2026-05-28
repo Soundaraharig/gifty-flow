@@ -55,66 +55,14 @@ const ConfiguratorPage = () => {
     addonIds: [],
     selectedGalleryImage: preSelectedImg ? decodeURIComponent(preSelectedImg) : null,
   });
-  const [userSelected, setUserSelected] = useState(!!preSelectedStyle);
-
   const { data: styles, isLoading: loadingStyles } = useEditingStyles();
   const { data: sizes, isLoading: loadingSizes } = useSizes();
   const { data: materials, isLoading: loadingMaterials } = useFrameMaterials();
 
   const selectedStyle = styles?.find((s: any) => s.id === config.editingStyleId);
 
-  const [slideshowIndex, setSlideshowIndex] = useState(0);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  // Auto-slideshow: cycle through styles until user selects one
-  useEffect(() => {
-    if (userSelected || !styles?.length) return;
-    intervalRef.current = setInterval(() => {
-      setSlideshowIndex((prev) => (prev + 1) % styles.length);
-    }, 2500);
-    return () => {if (intervalRef.current) clearInterval(intervalRef.current);};
-  }, [userSelected, styles]);
-
-  // Arrow key navigation
-  useEffect(() => {
-    if (!styles?.length) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "ArrowRight" || e.key === "ArrowDown") {
-        e.preventDefault();
-        if (!userSelected) setUserSelected(true);
-        setConfig((p) => {
-          const currentIdx = styles.findIndex((s: any) => s.id === p.editingStyleId);
-          const nextIdx = currentIdx < styles.length - 1 ? currentIdx + 1 : 0;
-          return { ...p, editingStyleId: styles[nextIdx].id };
-        });
-      } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
-        e.preventDefault();
-        if (!userSelected) setUserSelected(true);
-        setConfig((p) => {
-          const currentIdx = styles.findIndex((s: any) => s.id === p.editingStyleId);
-          const prevIdx = currentIdx > 0 ? currentIdx - 1 : styles.length - 1;
-          return { ...p, editingStyleId: styles[prevIdx].id };
-        });
-      }
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [styles, userSelected]);
-
-  const handleSelectStyle = useCallback((styleId: string) => {
-    setUserSelected(true);
-    if (intervalRef.current) clearInterval(intervalRef.current);
-    setConfig((p) => ({ ...p, editingStyleId: styleId }));
-    // Restart slideshow after 5 seconds of inactivity
-    intervalRef.current = setTimeout(() => {
-      setUserSelected(false);
-    }, 5000) as unknown as ReturnType<typeof setInterval>;
-  }, []);
-
   // Determine which style to show in preview
-  const previewStyle = userSelected ?
-  styles?.find((s: any) => s.id === config.editingStyleId) :
-  styles?.[slideshowIndex];
+  const previewStyle = styles?.find((s: any) => s.id === config.editingStyleId);
   // Use gallery-selected image if available, otherwise fall back to style image
   const heroImage = config.selectedGalleryImage
     ? config.selectedGalleryImage
@@ -186,141 +134,30 @@ const ConfiguratorPage = () => {
           ← Back to Categories
         </button>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-4 lg:gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-6 lg:gap-8">
           {/* Big Preview */}
-          <div>
+          <div className="flex flex-col items-center">
             <div
-              className="relative rounded-xl overflow-hidden bg-muted border border-border max-w-[480px] min-h-[300px] flex items-center justify-center group cursor-pointer shadow-sm"
-              onClick={() => {
-                if (previewStyle && userSelected) {
-                  navigate(`/style-gallery/${previewStyle.id}`);
-                }
-              }}
+              className="relative rounded-xl overflow-hidden bg-muted border border-border w-full max-w-[480px] aspect-[4/5] flex items-center justify-center shadow-sm"
             >
-              {heroImage ?
-              <img
-                key={previewStyle?.id || "empty"}
-                src={heroImage}
-                alt={previewStyle?.name || "Select a style"}
-                className="w-full h-auto max-h-[480px] object-contain animate-fade-in" /> :
-
-              <div className="w-full h-full min-h-[300px] flex items-center justify-center text-muted-foreground">
+              {heroImage ? (
+                <img
+                  src={heroImage}
+                  alt={previewStyle?.name || "Selected style"}
+                  className="w-full h-full object-cover animate-fade-in"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                   <div className="text-center">
                     <div className="text-5xl mb-3">🎨</div>
-                    <p className="font-medium">Select a style to preview</p>
+                    <p className="font-medium">Selected style preview</p>
                   </div>
                 </div>
-              }
-              {/* View More overlay on preview when style selected */}
-              {previewStyle && userSelected && (
-                <div className="absolute inset-0 flex items-center justify-center bg-foreground/0 group-hover:bg-foreground/30 transition-colors">
-                  <span className="text-sm font-medium text-primary-foreground opacity-0 group-hover:opacity-100 transition-opacity bg-primary/80 px-4 py-2 rounded-full">
-                    View More
-                  </span>
-                </div>
               )}
-              {/* Style name overlay during slideshow */}
-              {previewStyle && !userSelected &&
-              <div className="absolute bottom-10 left-0 right-0 px-4 animate-fade-in">
-                </div>
-              }
-              {/* Arrow buttons */}
-              {styles && styles.length > 1 &&
-              <>
-                  <button
-                  onClick={() => {
-                    if (!userSelected) setUserSelected(true);
-                    const idx = styles.findIndex((s: any) => s.id === previewStyle?.id);
-                    const prevIdx = idx > 0 ? idx - 1 : styles.length - 1;
-                    handleSelectStyle(styles[prevIdx].id);
-                  }}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-card/80 backdrop-blur-sm border border-border flex items-center justify-center text-foreground opacity-0 group-hover:opacity-100 transition-opacity hover:bg-card">
-                    ‹
-                  </button>
-                  <button
-                  onClick={() => {
-                    if (!userSelected) setUserSelected(true);
-                    const idx = styles.findIndex((s: any) => s.id === previewStyle?.id);
-                    const nextIdx = idx < styles.length - 1 ? idx + 1 : 0;
-                    handleSelectStyle(styles[nextIdx].id);
-                  }}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-card/80 backdrop-blur-sm border border-border flex items-center justify-center text-foreground opacity-0 group-hover:opacity-100 transition-opacity hover:bg-card">
-                    ›
-                  </button>
-                </>
-              }
-              {/* View More button removed — now on thumbnails */}
-              {/* Slideshow indicator dots */}
-              {!userSelected && styles &&
-              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
-                  {styles.map((_: any, i: number) =>
-                <div
-                  key={i}
-                  className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
-                  i === slideshowIndex ? "bg-primary w-4" : "bg-foreground/30"}`
-                  } />
-                )}
-                </div>
-              }
             </div>
-            {previewStyle && userSelected &&
-            <p className="text-xs text-muted-foreground mt-2 text-center">{previewStyle.name}</p>
-            }
-            {/* Mobile: horizontal thumbnails */}
-            <div className="lg:hidden flex gap-2 mt-3 overflow-x-auto pb-1">
-              {styles?.map((style: any) => {
-                const img = style.image_url || FALLBACK_IMAGES[style.slug];
-                const isSelected = config.editingStyleId === style.id;
-                return (
-                  <div key={style.id} className="relative shrink-0">
-                    <button
-                      onClick={() => handleSelectStyle(style.id)}
-                      className={`w-16 h-16 rounded-lg overflow-hidden border-2 transition-all duration-200 ${
-                      isSelected ?
-                      "border-primary ring-2 ring-primary/30 scale-105" :
-                      "border-border hover:border-primary/40"}`
-                      }>
-                      {img && <img src={img} alt={style.name} className="w-full h-full object-cover" loading="lazy" />}
-                    </button>
-                    {isSelected && userSelected && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); navigate(`/style-gallery/${style.id}`); }}
-                        className="absolute inset-0 flex items-center justify-center bg-foreground/40 rounded-lg text-[9px] font-medium text-primary-foreground hover:bg-foreground/50 transition-colors z-10"
-                      >
-                        View More
-                      </button>
-                    )}
-                  </div>);
-              })}
-            </div>
-          </div>
-
-          {/* Vertical Thumbnails (right of preview) */}
-          <div className="hidden lg:flex flex-col gap-2">
-            {styles?.map((style: any) => {
-              const img = style.image_url || FALLBACK_IMAGES[style.slug];
-              const isSelected = config.editingStyleId === style.id;
-              return (
-                <div key={style.id} className="relative">
-                  <button
-                    onClick={() => handleSelectStyle(style.id)}
-                    className={`w-[58px] h-[58px] rounded-md overflow-hidden border-2 transition-all duration-200 shrink-0 ${
-                    isSelected ?
-                    "border-primary ring-2 ring-primary/30" :
-                    "border-border hover:border-primary/40"}`
-                    }>
-                    {img && <img src={img} alt={style.name} className="w-full h-full object-cover" loading="lazy" />}
-                  </button>
-                  {isSelected && userSelected && (
-                    <button
-                      onClick={(e) => { e.stopPropagation(); navigate(`/style-gallery/${style.id}`); }}
-                      className="absolute inset-0 flex items-center justify-center bg-foreground/40 rounded-md text-[9px] font-medium text-primary-foreground hover:bg-foreground/50 transition-colors z-10"
-                    >
-                      View More
-                    </button>
-                  )}
-                </div>);
-            })}
+            {previewStyle && (
+              <p className="text-sm font-semibold text-foreground mt-3 text-center">{previewStyle.name}</p>
+            )}
           </div>
 
           {/* Right: Product Details */}
