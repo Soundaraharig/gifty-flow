@@ -2,12 +2,85 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Loader2, AlertCircle } from "lucide-react";
+import { ArrowLeft, Loader2, AlertCircle, Camera } from "lucide-react";
 
 const ARFrameScanner = () => {
   const { frameId } = useParams<{ frameId: string }>();
   const navigate = useNavigate();
   const [scriptsLoaded, setScriptsLoaded] = useState(false);
+  const [isTracking, setIsTracking] = useState(false);
+  const [videoAspect, setVideoAspect] = useState<{ width: number; height: number }>({ width: 1, height: 1.4 });
+
+  // Inject custom CSS to isolate A-Frame / MindAR and prevent Vite root container offsets or transition delays
+  useEffect(() => {
+    const styleEl = document.createElement("style");
+    styleEl.id = "ar-single-scanner-styles";
+    styleEl.innerHTML = `
+      #root {
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+      }
+      body, html {
+        overflow: hidden !important;
+        width: 100% !important;
+        height: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background-color: #000000 !important;
+      }
+      /* Prevent CSS transition properties from lagging MindAR position updates */
+      * {
+        transition: none !important;
+      }
+      /* Suppress only for A-Frame canvas updates, but let our scanner guide fade nicely */
+      .ar-guide-fade, .ar-guide-fade * {
+        transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out !important;
+      }
+      /* Force MindAR webcam video tag to be absolutely fullscreen and aligned */
+      video {
+        max-width: none !important;
+        max-height: none !important;
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: cover !important;
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        z-index: -100 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      /* Force A-Frame canvas to be perfectly aligned */
+      .a-canvas {
+        width: 100% !important;
+        height: 100% !important;
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      @keyframes ar-scan-line {
+        0%, 100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(280px);
+        }
+      }
+      .ar-scanner-line {
+        animation: ar-scan-line 3s ease-in-out infinite !important;
+      }
+    `;
+    document.head.appendChild(styleEl);
+
+    return () => {
+      styleEl.remove();
+    };
+  }, []);
 
   // 1. Synchronously load script tags and handle sequential initialization
   useEffect(() => {
@@ -119,6 +192,7 @@ const ARFrameScanner = () => {
 
     const handleFound = () => {
       console.log("AR Target detected! Starting media playback.");
+      setIsTracking(true);
       video.play().catch((err) => {
         console.warn("Media playback was interrupted by user or browser rules:", err);
       });
@@ -126,6 +200,7 @@ const ARFrameScanner = () => {
 
     const handleLost = () => {
       console.log("AR Target lost. Pausing video playback.");
+      setIsTracking(false);
       video.pause();
     };
 
@@ -188,10 +263,37 @@ const ARFrameScanner = () => {
         <ArrowLeft size={18} /> Exit
       </button>
 
+      {/* Dynamic glassmorphic scanning box guide overlay - hidden when target is active */}
+      <div className={`ar-guide-fade absolute inset-0 pointer-events-none flex flex-col items-center justify-center z-[9000] ${
+        isTracking ? "opacity-0 scale-95" : "opacity-100 scale-100"
+      }`}>
+        <div className="relative w-64 h-[280px] flex items-center justify-center">
+          {/* Glassmorphic Box container */}
+          <div className="absolute inset-0 bg-white/[0.02] backdrop-blur-[1px] border border-white/10 rounded-2xl flex flex-col items-center justify-center p-6 text-center shadow-2xl">
+            <Camera className="w-8 h-8 text-primary mb-3 animate-pulse" />
+            <p className="text-white font-semibold text-sm tracking-wide font-sans">Align Photo Frame</p>
+            <p className="text-white/40 text-[10px] mt-2 leading-relaxed max-w-[180px] font-sans">
+              Point your camera at the physical photo target frame to unlock your gift video
+            </p>
+          </div>
+
+          {/* Bracket Corners */}
+          <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-primary rounded-tl-xl"></div>
+          <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-primary rounded-tr-xl"></div>
+          <div className="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-primary rounded-bl-xl"></div>
+          <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-primary rounded-br-xl"></div>
+
+          {/* Glowing Animated Scanning Line */}
+          <div className="ar-scanner-line absolute left-0 right-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent shadow-[0_0_8px_rgba(235,116,98,0.6)]"></div>
+        </div>
+        <p className="text-white/60 font-body text-xs font-semibold tracking-wider mt-6 animate-pulse uppercase">
+          LENS ACTIVE • SEARCHING TARGET
+        </p>
+      </div>
+
       {/* A-Frame AR Engine */}
       <a-scene
         mindar-image={`imageTargetSrc: ${data.target_mind_url}; autoStart: true;`}
-        embedded
         vr-mode-ui="enabled: false"
         device-orientation-permission-ui="enabled: false"
       >
@@ -204,6 +306,12 @@ const ARFrameScanner = () => {
             crossOrigin="anonymous"
             playsInline
             webkit-playsinline="true"
+            onLoadedMetadata={(e) => {
+              const video = e.currentTarget;
+              const aspect = video.videoHeight / video.videoWidth;
+              console.log(`[Aspect Track] Video dimensions: ${video.videoWidth}x${video.videoHeight}, Aspect: ${aspect}`);
+              setVideoAspect({ width: 1, height: aspect });
+            }}
           />
         </a-assets>
 
@@ -212,8 +320,8 @@ const ARFrameScanner = () => {
         <a-entity mindar-image-target="targetIndex: 0" id="targetAnchor">
           <a-video
             src="#frameVideo"
-            width="1"
-            height="1.4"
+            width={videoAspect.width}
+            height={videoAspect.height}
             position="0 0 0"
           />
         </a-entity>

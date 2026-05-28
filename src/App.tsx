@@ -20,7 +20,6 @@ import CategoriesPage from "./pages/CategoriesPage";
 import CartPage from "./pages/CartPage";
 import SubscriptionPage from "./pages/SubscriptionPage";
 import NotFound from "./pages/NotFound";
-import ChatAssistantPage from "./pages/ChatAssistantPage";
 import ARFrameScanner from "./components/ARFrameScanner";
 import ScanFramePage from "./pages/ScanFramePage";
 
@@ -49,7 +48,6 @@ const App = () => (
                 <Route path="/cart" element={<ProtectedRoute><CartPage /></ProtectedRoute>} />
                 <Route path="/subscribe" element={<ProtectedRoute><SubscriptionPage /></ProtectedRoute>} />
                 <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
-                <Route path="/assistant" element={<ChatAssistantPage />} />
                 <Route path="/scan/:frameId" element={<ARFrameScanner />} />
                 <Route path="/scan-frame" element={<ScanFramePage />} />
                 <Route path="*" element={<NotFound />} />
