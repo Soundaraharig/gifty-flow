@@ -427,13 +427,10 @@ const ScanFramePage = () => {
       </div>
 
       {/* Floating Status Display */}
-      <div className="absolute top-4 right-4 z-[10000] bg-black/60 border border-white/10 px-4 py-2 rounded-full backdrop-blur-md flex items-center gap-2">
+      <div className="absolute top-4 right-4 z-[10000] bg-black/60 border border-white/10 p-3 rounded-full backdrop-blur-md flex items-center justify-center shadow-md">
         <span className="relative flex h-2 w-2">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
           <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-        </span>
-        <span className="text-[11px] text-white/90 font-mono tracking-wide uppercase font-semibold">
-          Multi-Target Active ({frames.length} Frame{frames.length > 1 ? "s" : ""})
         </span>
       </div>
 
