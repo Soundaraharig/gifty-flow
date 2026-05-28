@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Loader2, AlertCircle, Sparkles, Image, Camera } from "lucide-react";
+import { ArrowLeft, Loader2, AlertCircle, Sparkles, Image, Camera, Volume2 } from "lucide-react";
 import { getOptimizedVideoUrl } from "@/lib/cloudinary";
 
 const ScanFramePage = () => {
@@ -12,6 +12,27 @@ const ScanFramePage = () => {
   const [detectedFrame, setDetectedFrame] = useState<any | null>(null);
   const [arMode, setArMode] = useState<"popup" | "3d">("popup");
   const [videoAspectRatios, setVideoAspectRatios] = useState<Record<string, number>>({});
+  const [audioPrimed, setAudioPrimed] = useState(false);
+
+  const primeAudio = () => {
+    // Prime all video elements in frames so browser allows unmuted autoplay on target lock
+    frames.forEach((frame) => {
+      const video = document.getElementById(`video-${frame.id}`) as HTMLVideoElement;
+      if (video) {
+        video.muted = false;
+        // Play and immediately pause to satisfy browser autoplay requirements
+        video.play()
+          .then(() => {
+            video.pause();
+            console.log(`AR Video video-${frame.id} primed successfully.`);
+          })
+          .catch((err) => {
+            console.warn(`Failed to prime video-${frame.id}:`, err);
+          });
+      }
+    });
+    setAudioPrimed(true);
+  };
 
   // Inject custom CSS to isolate A-Frame / MindAR and prevent Vite root container offsets or transition delays
   useEffect(() => {
@@ -560,6 +581,25 @@ const ScanFramePage = () => {
               Zero Gifts • Premium AR Experience
             </p>
           </div>
+        </div>
+      )}
+      
+      {!audioPrimed && (
+        <div className="fixed inset-0 z-[110000] bg-black/95 flex flex-col items-center justify-center p-6 text-center">
+          <div className="w-16 h-16 rounded-full bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500 mb-6 animate-pulse">
+            <Sparkles className="w-8 h-8" />
+          </div>
+          <h3 className="text-xl font-bold text-white mb-2">Ready to Start AR Experience?</h3>
+          <p className="text-sm text-white/60 max-w-sm mb-8 leading-relaxed">
+            This experience includes dynamic audio. Tap the button below to enable camera and audio playback.
+          </p>
+          <button
+            onClick={primeAudio}
+            className="px-8 py-3.5 rounded-full bg-rose-500 text-white font-bold text-sm tracking-wide shadow-rose hover:bg-rose-600 transition-all transform active:scale-95 flex items-center gap-2"
+          >
+            <Volume2 size={16} />
+            <span>Start Experience</span>
+          </button>
         </div>
       )}
     </div>
