@@ -141,135 +141,80 @@ const StyleCollectionPage = () => {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredStyles.map((style) => {
               const defaultImage = style.image_url || FALLBACK_IMAGES[style.slug] || "";
-              const currentPreviewImage = hoveredImages[style.id] || defaultImage;
               const hasModels = style.style_gallery_images && style.style_gallery_images.length > 0;
-              const displayModels = (style.style_gallery_images ?? []).slice(0, 4);
               const isPopular = style.sort_order && style.sort_order <= 3;
 
               return (
-                <article
+                <button
                   key={style.id}
-                  onClick={() => navigate(`/style-gallery/${style.id}`)}
-                  className="group flex flex-col bg-card rounded-2xl overflow-hidden border border-border/80 hover:border-primary/40 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer"
+                  onClick={() => navigate(`/configure/photo-frames?style=${style.id}`)}
+                  className="group relative rounded-2xl overflow-hidden border-2 text-left transition-all duration-300 bg-card hover:shadow-lg border-border hover:border-primary/40 flex flex-col w-full"
                   id={`style-card-${style.slug}`}
                 >
                   {/* Card Header Preview */}
-                  <div className="relative aspect-video overflow-hidden bg-muted w-full">
+                  <div className="aspect-square overflow-hidden bg-muted w-full relative">
                     {/* Main Preview Image */}
-                    <img
-                      src={currentPreviewImage}
-                      alt={style.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      loading="lazy"
-                    />
+                    {defaultImage ? (
+                      <img
+                        src={defaultImage}
+                        alt={style.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <span className="text-5xl">🎨</span>
+                      </div>
+                    )}
 
                     {/* Pop / Hot Badges */}
                     {isPopular && (
-                      <span className="absolute top-3 left-3 bg-rose-500/90 text-white text-[10px] font-bold tracking-wider uppercase px-2.5 py-1 rounded-full shadow-sm">
+                      <span className="absolute top-3 left-3 bg-rose-500/90 text-white text-[10px] font-bold tracking-wider uppercase px-2.5 py-1 rounded-full shadow-sm z-10">
                         🔥 Popular
                       </span>
                     )}
-
-                    {/* Starting Price Badge */}
-                    <span className="absolute bottom-3 right-3 bg-background/95 backdrop-blur-md text-primary text-xs font-bold px-3 py-1.5 rounded-full border border-border shadow-sm">
-                      Editing: ₹{style.price}
-                    </span>
                   </div>
 
                   {/* Card Content */}
-                  <div className="p-5 flex-1 flex flex-col justify-between">
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <h2 className="font-display text-xl font-bold text-foreground group-hover:text-primary transition-colors">
-                          {style.name}
-                        </h2>
-                      </div>
-                      
-                      <p className="text-sm text-muted-foreground line-clamp-2">
-                        {style.description || "Transform your cherished photos into custom art frames designed by professional editors."}
-                      </p>
-
-                      {/* Dynamic Model Previews */}
-                      {hasModels && (
-                        <div className="space-y-2 pt-2">
-                          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                            <ImageIcon size={12} /> Hover to preview models
-                          </p>
-                          <div className="flex items-center gap-2">
-                            {/* Main base preview thumbnail */}
-                            <button
-                              onMouseEnter={() => {
-                                setHoveredImages((prev) => ({ ...prev, [style.id]: defaultImage }));
-                              }}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setHoveredImages((prev) => ({ ...prev, [style.id]: defaultImage }));
-                              }}
-                              className={`w-10 h-10 rounded-lg overflow-hidden border-2 transition-all ${
-                                currentPreviewImage === defaultImage
-                                  ? "border-primary scale-105 shadow-sm"
-                                  : "border-border hover:border-primary/50"
-                              }`}
-                              title="Original Preview"
-                              id={`thumb-default-${style.id}`}
-                            >
-                              <img src={defaultImage} alt="Base" className="w-full h-full object-cover" />
-                            </button>
-
-                            {/* Additional model thumbnails */}
-                            {displayModels.map((thumb) => (
-                              <button
-                                key={thumb.id}
-                                onMouseEnter={() => {
-                                  setHoveredImages((prev) => ({ ...prev, [style.id]: thumb.image_url }));
-                                }}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setHoveredImages((prev) => ({ ...prev, [style.id]: thumb.image_url }));
-                                }}
-                                className={`w-10 h-10 rounded-lg overflow-hidden border-2 transition-all ${
-                                  currentPreviewImage === thumb.image_url
-                                    ? "border-primary scale-105 shadow-sm"
-                                    : "border-border hover:border-primary/50"
-                                  }`}
-                                title={thumb.title || "Model image"}
-                                id={`thumb-${thumb.id}`}
-                              >
-                                <img src={thumb.image_url} alt={thumb.title || ""} className="w-full h-full object-cover" />
-                              </button>
-                            ))}
-
-                            {/* View Full Gallery Link (if more than 3 models exist) */}
-                            {style.style_gallery_images.length > 4 && (
-                              <button
-                                onClick={() => navigate(`/style-gallery/${style.id}`)}
-                                className="w-10 h-10 rounded-lg bg-muted hover:bg-muted/80 text-[10px] text-muted-foreground hover:text-foreground font-bold flex items-center justify-center border border-border/80 transition-colors"
-                                title="View all models"
-                                id={`view-gallery-link-${style.id}`}
-                              >
-                                +{style.style_gallery_images.length - 4}
-                              </button>
-                            )}
-                          </div>
-                        </div>
+                  <div className="p-4 flex-1 flex flex-col justify-between w-full">
+                    <div>
+                      <h3 className="font-display text-lg font-bold text-foreground group-hover:text-primary transition-colors">
+                        {style.name}
+                      </h3>
+                      {style.description && (
+                        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                          {style.description}
+                        </p>
                       )}
                     </div>
 
-                    {/* Card Actions */}
-                    <div className="flex flex-col gap-2 pt-5 mt-auto" onClick={(e) => e.stopPropagation()}>
-                      <button
-                        onClick={() => navigate(`/style-gallery/${style.id}`)}
-                        className="w-full py-3 rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold text-sm shadow-rose hover:opacity-95 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 flex items-center justify-center gap-1.5"
-                        id={`btn-view-models-${style.slug}`}
-                      >
-                        ✨ Explore Models & Customize <ArrowRight size={16} />
-                      </button>
+                    <div className="mt-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-xl font-bold text-primary">₹{style.price}</span>
+                          <span className="text-sm text-muted-foreground line-through">
+                            ₹{Math.round(style.price * 1.25)}
+                          </span>
+                        </div>
+                        {hasModels && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/style-gallery/${style.id}`);
+                            }}
+                            className="text-xs text-primary hover:underline font-semibold flex items-center gap-0.5"
+                            title="Explore style models"
+                          >
+                            📷 Gallery
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </article>
+                </button>
               );
             })}
           </div>
