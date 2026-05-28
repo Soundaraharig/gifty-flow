@@ -4,7 +4,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Header from "@/components/Header";
-import { QRCodeCanvas } from "qrcode.react";
 
 import AdminUsers from "@/components/admin/AdminUsers";
 import AdminSubscriptions from "@/components/admin/AdminSubscriptions";
@@ -1029,7 +1028,6 @@ const AdminVideoFrames = ({ isAdmin }: { isAdmin: boolean }) => {
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState("");
-  const [activeQrFrame, setActiveQrFrame] = useState<{ id: string; frame_name: string } | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   // Retrieve current user ID on mount for ownership checks
@@ -1136,11 +1134,7 @@ const AdminVideoFrames = ({ isAdmin }: { isAdmin: boolean }) => {
     }
   };
 
-  const copyScannerLink = (id: string) => {
-    const link = `${window.location.origin}/scan/${id}`;
-    navigator.clipboard.writeText(link);
-    alert("Scanner link copied to clipboard:\n" + link);
-  };
+
 
   return (
     <div className="space-y-6">
@@ -1230,89 +1224,22 @@ const AdminVideoFrames = ({ isAdmin }: { isAdmin: boolean }) => {
                   </div>
                 </div>
                 
-                <div className="flex flex-wrap gap-2 pt-2 border-t border-border/50">
-                  <button
-                    onClick={() => copyScannerLink(frame.id)}
-                    className="flex-1 min-w-[70px] px-3 py-2 rounded-full border border-border bg-background hover:bg-muted text-xs font-semibold text-foreground transition-all flex items-center justify-center gap-1"
-                    title="Copy direct scanner link"
-                  >
-                    🔗 Link
-                  </button>
-                  <button
-                    onClick={() => setActiveQrFrame({ id: frame.id, frame_name: frame.frame_name })}
-                    className="flex-1 min-w-[90px] px-3 py-2 rounded-full bg-primary/10 text-primary hover:bg-primary/20 text-xs font-bold transition-all flex items-center justify-center gap-1"
-                    title="Generate printable QR Code"
-                  >
-                    🖼️ QR Code
-                  </button>
-                  <a
-                    href={`/scan/${frame.id}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="px-3 py-2 rounded-full bg-accent/15 text-accent-foreground hover:bg-accent/25 text-xs font-bold transition-all flex items-center justify-center"
-                    title="Open live AR experience"
-                  >
-                    👁️ Test
-                  </a>
-                  {(isAdmin || frame.created_by === currentUserId) && (
+                {(isAdmin || frame.created_by === currentUserId) && (
+                  <div className="flex justify-end pt-2 border-t border-border/50">
                     <button
                       onClick={() => { if (confirm("Are you sure you want to delete this frame and RLS records?")) deleteMutation.mutate(frame.id); }}
-                      className="px-3 py-2 rounded-full border border-destructive/20 bg-destructive/5 hover:bg-destructive/10 text-xs font-bold text-destructive transition-all flex items-center justify-center"
+                      className="px-4 py-2 rounded-full border border-destructive/20 bg-destructive/5 hover:bg-destructive/10 text-xs font-bold text-destructive transition-all flex items-center justify-center gap-1.5"
                       title="Delete Frame"
                     >
-                      🗑️
+                      <span>🗑️ Delete Frame</span>
                     </button>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
         )}
       </div>
-
-      {/* Printable QR Code Modal */}
-      {activeQrFrame && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-card border border-border p-6 rounded-2xl max-w-sm w-full shadow-2xl text-center space-y-4 animate-in fade-in zoom-in-95 duration-200">
-            <h3 className="font-display text-lg font-bold text-foreground">AR Frame QR Code</h3>
-            <p className="text-xs text-muted-foreground">Scan to open the live experience for: <span className="font-semibold text-foreground">{activeQrFrame.frame_name}</span></p>
-            
-            <div className="bg-white p-4 rounded-xl inline-block border border-border">
-              <QRCodeCanvas
-                id={`qr-${activeQrFrame.id}`}
-                value={`https://zero-gif.lovable.app/scan/${activeQrFrame.id}`}
-                size={220}
-                level="H"
-                includeMargin={true}
-              />
-            </div>
-
-            <div className="flex gap-2">
-              <button
-                onClick={() => {
-                  const canvas = document.getElementById(`qr-${activeQrFrame.id}`) as HTMLCanvasElement;
-                  if (canvas) {
-                    const url = canvas.toDataURL("image/png");
-                    const link = document.createElement("a");
-                    link.download = `qr-${activeQrFrame.frame_name.toLowerCase().replace(/\s+/g, "-")}.png`;
-                    link.href = url;
-                    link.click();
-                  }
-                }}
-                className="flex-1 px-4 py-2.5 rounded-full bg-primary text-primary-foreground text-sm font-semibold hover:opacity-95 transition-opacity"
-              >
-                Download PNG
-              </button>
-              <button
-                onClick={() => setActiveQrFrame(null)}
-                className="px-4 py-2.5 rounded-full border border-border hover:bg-muted text-sm font-semibold text-foreground transition-all"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

@@ -8,14 +8,8 @@ const ScanFramePage = () => {
   const navigate = useNavigate();
   const [scriptsLoaded, setScriptsLoaded] = useState(false);
 
-  // 1. Sequentially load script tags to ensure A-Frame loads before MindAR (skip if database check completed and no frames found)
+  // 1. Sequentially load script tags to ensure A-Frame loads before MindAR
   useEffect(() => {
-    if (isLoading) return;
-    if (frames.length === 0) {
-      console.log("No active target frames found in database. Skipping script initialization.");
-      return;
-    }
-
     const loadScript = (url: string): Promise<boolean> => {
       return new Promise((resolve, reject) => {
         if (document.querySelector(`script[src="${url}"]`)) {
@@ -90,7 +84,7 @@ const ScanFramePage = () => {
       document.body.classList.remove("a-body");
       document.documentElement.classList.remove("a-html");
     };
-  }, [isLoading, frames.length]);
+  }, []);
 
   // 2. Fetch all active video frame targets from the database
   const { data: frames = [], isLoading, error: dbError } = useQuery({
