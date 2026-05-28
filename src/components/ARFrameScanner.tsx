@@ -13,25 +13,29 @@ const ARFrameScanner = () => {
   const [isTargetDetected, setIsTargetDetected] = useState(false);
   const [arMode, setArMode] = useState<"popup" | "3d">("popup");
   const [aspectRatio, setAspectRatio] = useState<number>(16 / 9);
-  const [audioPrimed, setAudioPrimed] = useState(false);
+  // Global interaction listener to prime audio context unmuted on first tap anywhere
+  useEffect(() => {
+    const handleGlobalClick = () => {
+      const video = document.getElementById("frameVideo") as HTMLVideoElement;
+      if (video) {
+        try {
+          video.muted = false;
+          video.play().then(() => video.pause()).catch(() => {});
+        } catch (e) {}
+      }
+      console.log("[ARFrameScanner] Audio primed via global gesture.");
+      window.removeEventListener("click", handleGlobalClick);
+      window.removeEventListener("touchstart", handleGlobalClick);
+    };
 
-  const primeAudio = () => {
-    // Prime the video element so browser allows unmuted autoplay on target lock
-    const video = document.getElementById("frameVideo") as HTMLVideoElement;
-    if (video) {
-      video.muted = false;
-      // Play and immediately pause to satisfy browser autoplay requirements
-      video.play()
-        .then(() => {
-          video.pause();
-          console.log("AR Video primed with user gesture successfully.");
-        })
-        .catch((err) => {
-          console.warn("Failed to prime video element:", err);
-        });
-    }
-    setAudioPrimed(true);
-  };
+    window.addEventListener("click", handleGlobalClick);
+    window.addEventListener("touchstart", handleGlobalClick);
+
+    return () => {
+      window.removeEventListener("click", handleGlobalClick);
+      window.removeEventListener("touchstart", handleGlobalClick);
+    };
+  }, []);
 
   // Inject custom CSS to isolate A-Frame / MindAR and prevent Vite root container offsets or transition delays
   useEffect(() => {
@@ -61,8 +65,10 @@ const ARFrameScanner = () => {
       .ar-guide-fade, .ar-guide-fade * {
         transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out !important;
       }
-      /* Force MindAR webcam video tag to be absolutely fullscreen and aligned */
-      video:not(.ar-popup-video) {
+      /* Force MindAR webcam video tag to be absolutely fullscreen and aligned.
+         Only target the camera feed, NOT the a-assets source videos which A-Frame
+         needs in normal flow to drive the WebGL texture. */
+      video:not(.ar-popup-video):not([id^="frameVideo"]):not([id^="video-"]) {
         max-width: none !important;
         max-height: none !important;
         width: 100% !important;
@@ -74,6 +80,15 @@ const ARFrameScanner = () => {
         z-index: -100 !important;
         margin: 0 !important;
         padding: 0 !important;
+      }
+      /* Keep A-Frame asset videos invisible but in-flow so WebGL textures work */
+      a-assets video {
+        position: absolute !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        width: 0 !important;
+        height: 0 !important;
+        z-index: -200 !important;
       }
       /* Force A-Frame canvas to be perfectly aligned */
       .a-canvas {
@@ -278,8 +293,11 @@ const ARFrameScanner = () => {
         setIsTracking(false);
         // Play 3D video
         if (video3d) {
+          video3d.muted = false; // Attempt unmuted play first
           video3d.play().catch((err) => {
-            console.warn("Seamless AR video play failed:", err);
+            console.warn("Seamless AR video unmuted play failed, falling back to muted:", err);
+            video3d.muted = true; // Fall back to muted so it always plays visually
+            video3d.play().catch((e) => console.error("Muted play failed too:", e));
           });
         }
       }
@@ -436,8 +454,8 @@ const ARFrameScanner = () => {
         <a-entity mindar-image-target="targetIndex: 0" id="targetAnchor">
           <a-video
             src="#frameVideo"
-            width="0.85"
-            height={String(0.85 / aspectRatio)}
+            width="1"
+            height={String(1 / aspectRatio)}
             position="0 0 0"
             rotation="0 0 0"
             visible={arMode === "3d" ? "true" : "false"}
@@ -488,25 +506,7 @@ const ARFrameScanner = () => {
           </div>
         </div>
       )}
-      
-      {!audioPrimed && (
-        <div className="fixed inset-0 z-[110000] bg-black/95 flex flex-col items-center justify-center p-6 text-center">
-          <div className="w-16 h-16 rounded-full bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500 mb-6 animate-pulse">
-            <Sparkles className="w-8 h-8" />
-          </div>
-          <h3 className="text-xl font-bold text-white mb-2">Ready to Start AR Experience?</h3>
-          <p className="text-sm text-white/60 max-w-sm mb-8 leading-relaxed">
-            This experience includes dynamic audio. Tap the button below to enable camera and audio playback.
-          </p>
-          <button
-            onClick={primeAudio}
-            className="px-8 py-3.5 rounded-full bg-rose-500 text-white font-bold text-sm tracking-wide shadow-rose hover:bg-rose-600 transition-all transform active:scale-95 flex items-center gap-2"
-          >
-            <Volume2 size={16} />
-            <span>Start Experience</span>
-          </button>
-        </div>
-      )}
+
     </div>
   );
 };

@@ -12,27 +12,31 @@ const ScanFramePage = () => {
   const [detectedFrame, setDetectedFrame] = useState<any | null>(null);
   const [arMode, setArMode] = useState<"popup" | "3d">("popup");
   const [videoAspectRatios, setVideoAspectRatios] = useState<Record<string, number>>({});
-  const [audioPrimed, setAudioPrimed] = useState(false);
+  // Global interaction listener to prime audio context unmuted on first tap anywhere
+  useEffect(() => {
+    const handleGlobalClick = () => {
+      frames.forEach((frame) => {
+        const video = document.getElementById(`video-${frame.id}`) as HTMLVideoElement;
+        if (video) {
+          try {
+            video.muted = false;
+            video.play().then(() => video.pause()).catch(() => {});
+          } catch (e) {}
+        }
+      });
+      console.log("[ScanFramePage] Audio primed via global gesture.");
+      window.removeEventListener("click", handleGlobalClick);
+      window.removeEventListener("touchstart", handleGlobalClick);
+    };
 
-  const primeAudio = () => {
-    // Prime all video elements in frames so browser allows unmuted autoplay on target lock
-    frames.forEach((frame) => {
-      const video = document.getElementById(`video-${frame.id}`) as HTMLVideoElement;
-      if (video) {
-        video.muted = false;
-        // Play and immediately pause to satisfy browser autoplay requirements
-        video.play()
-          .then(() => {
-            video.pause();
-            console.log(`AR Video video-${frame.id} primed successfully.`);
-          })
-          .catch((err) => {
-            console.warn(`Failed to prime video-${frame.id}:`, err);
-          });
-      }
-    });
-    setAudioPrimed(true);
-  };
+    window.addEventListener("click", handleGlobalClick);
+    window.addEventListener("touchstart", handleGlobalClick);
+
+    return () => {
+      window.removeEventListener("click", handleGlobalClick);
+      window.removeEventListener("touchstart", handleGlobalClick);
+    };
+  }, [frames]);
 
   // Inject custom CSS to isolate A-Frame / MindAR and prevent Vite root container offsets or transition delays
   useEffect(() => {
@@ -62,8 +66,10 @@ const ScanFramePage = () => {
       .ar-guide-fade, .ar-guide-fade * {
         transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out !important;
       }
-      /* Force MindAR webcam video tag to be absolutely fullscreen and aligned */
-      video:not(.ar-popup-video) {
+      /* Force MindAR webcam video tag to be absolutely fullscreen and aligned.
+         Only target the camera feed, NOT the a-assets source videos which A-Frame
+         needs in normal flow to drive the WebGL texture. */
+      video:not(.ar-popup-video):not([id^="frameVideo"]):not([id^="video-"]) {
         max-width: none !important;
         max-height: none !important;
         width: 100% !important;
@@ -75,6 +81,15 @@ const ScanFramePage = () => {
         z-index: -100 !important;
         margin: 0 !important;
         padding: 0 !important;
+      }
+      /* Keep A-Frame asset videos invisible but in-flow so WebGL textures work */
+      a-assets video {
+        position: absolute !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        width: 0 !important;
+        height: 0 !important;
+        z-index: -200 !important;
       }
       /* Force A-Frame canvas to be perfectly aligned */
       .a-canvas {
@@ -268,8 +283,11 @@ const ScanFramePage = () => {
 
             // Play the matching 3D overlay video
             if (video3d) {
+              video3d.muted = false;
               video3d.play().catch((err) => {
-                console.warn(`Media play failed or was delayed by browser context policy:`, err);
+                console.warn(`Unmuted play failed, falling back to muted:`, err);
+                video3d.muted = true;
+                video3d.play().catch((e) => console.error("Muted play also failed:", e));
               });
             }
           }
@@ -326,8 +344,11 @@ const ScanFramePage = () => {
         setDetectedFrame(null);
         // Seamlessly start the 3D tracking video
         if (video3d) {
+          video3d.muted = false;
           video3d.play().catch((err) => {
-            console.warn("Seamless play failed:", err);
+            console.warn("Seamless unmuted play failed, falling back to muted:", err);
+            video3d.muted = true;
+            video3d.play().catch((e) => console.error("Muted play also failed:", e));
           });
         }
       }
@@ -530,8 +551,8 @@ const ScanFramePage = () => {
           >
             <a-video
               src={`#video-${frame.id}`}
-              width="0.85"
-              height={String(0.85 / (videoAspectRatios[frame.id] || (16 / 9)))}
+              width="1"
+              height={String(1 / (videoAspectRatios[frame.id] || (16 / 9)))}
               position="0 0 0"
               rotation="0 0 0"
               visible={arMode === "3d" ? "true" : "false"}
@@ -583,25 +604,7 @@ const ScanFramePage = () => {
           </div>
         </div>
       )}
-      
-      {!audioPrimed && (
-        <div className="fixed inset-0 z-[110000] bg-black/95 flex flex-col items-center justify-center p-6 text-center">
-          <div className="w-16 h-16 rounded-full bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500 mb-6 animate-pulse">
-            <Sparkles className="w-8 h-8" />
-          </div>
-          <h3 className="text-xl font-bold text-white mb-2">Ready to Start AR Experience?</h3>
-          <p className="text-sm text-white/60 max-w-sm mb-8 leading-relaxed">
-            This experience includes dynamic audio. Tap the button below to enable camera and audio playback.
-          </p>
-          <button
-            onClick={primeAudio}
-            className="px-8 py-3.5 rounded-full bg-rose-500 text-white font-bold text-sm tracking-wide shadow-rose hover:bg-rose-600 transition-all transform active:scale-95 flex items-center gap-2"
-          >
-            <Volume2 size={16} />
-            <span>Start Experience</span>
-          </button>
-        </div>
-      )}
+
     </div>
   );
 };
