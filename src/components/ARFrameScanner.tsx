@@ -39,7 +39,7 @@ const ARFrameScanner = () => {
         transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out !important;
       }
       /* Force MindAR webcam video tag to be absolutely fullscreen and aligned */
-      video {
+      video:not(.ar-popup-video) {
         max-width: none !important;
         max-height: none !important;
         width: 100% !important;
@@ -353,7 +353,7 @@ const ARFrameScanner = () => {
                 controls
                 playsInline
                 preload="auto"
-                className="w-full h-auto block max-h-[50vh] rounded-xl"
+                className="ar-popup-video w-full h-auto block max-h-[50vh] rounded-xl"
                 style={{ display: "block" }}
               />
             </div>

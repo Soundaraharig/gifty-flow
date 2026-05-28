@@ -28,15 +28,9 @@ const StatsAndCTA = () => {
           <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-4">
             Ready to Create Something Special?
           </h2>
-          <p className="text-muted-foreground mb-8">
+          <p className="text-muted-foreground mt-4">
             Turn your favorite memories into handcrafted art. The perfect gift for every occasion.
           </p>
-          <button
-            onClick={() => navigate("/categories")}
-            className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-8 py-3.5 rounded-full font-medium text-sm shadow-rose hover:opacity-90 transition-opacity"
-          >
-            Start Creating →
-          </button>
         </div>
       </div>
     </section>

@@ -14,12 +14,6 @@ const HeroSection = () => {
           <p className="text-lg text-muted-foreground mb-8 max-w-md mx-auto">
             Custom photo frames, resin art & personalized gifts — crafted uniquely for your loved ones.
           </p>
-          <a
-            href="/categories"
-            className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-8 py-3.5 rounded-full font-medium text-sm shadow-rose hover:opacity-90 transition-opacity"
-          >
-            Explore Collection
-          </a>
         </div>
       </div>
     </section>
