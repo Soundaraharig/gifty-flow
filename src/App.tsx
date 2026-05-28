@@ -19,6 +19,7 @@ import AdminPage from "./pages/AdminPage";
 import CategoriesPage from "./pages/CategoriesPage";
 import CartPage from "./pages/CartPage";
 import SubscriptionPage from "./pages/SubscriptionPage";
+import BuyCreditsPage from "./pages/BuyCreditsPage";
 import NotFound from "./pages/NotFound";
 import ARFrameScanner from "./components/ARFrameScanner";
 import ScanFramePage from "./pages/ScanFramePage";
@@ -47,6 +48,7 @@ const App = () => (
                 <Route path="/my-orders" element={<ProtectedRoute><MyOrdersPage /></ProtectedRoute>} />
                 <Route path="/cart" element={<ProtectedRoute><CartPage /></ProtectedRoute>} />
                 <Route path="/subscribe" element={<ProtectedRoute><SubscriptionPage /></ProtectedRoute>} />
+                <Route path="/buy-credits" element={<ProtectedRoute><BuyCreditsPage /></ProtectedRoute>} />
                 <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
                 <Route path="/scan/:frameId" element={<ARFrameScanner />} />
                 <Route path="/scan-frame" element={<ScanFramePage />} />

@@ -4,11 +4,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Header from "@/components/Header";
+import { toast } from "sonner";
 
 import AdminUsers from "@/components/admin/AdminUsers";
 import AdminSubscriptions from "@/components/admin/AdminSubscriptions";
 
-type Tab = "categories" | "styles" | "sizes" | "materials" | "orders" | "gallery" | "resin" | "settings" | "users" | "subscriptions" | "video-frames";
+type Tab = "categories" | "styles" | "sizes" | "materials" | "orders" | "gallery" | "resin" | "settings" | "users" | "subscriptions" | "video-frames" | "credit-requests";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
@@ -51,6 +52,7 @@ const AdminPage = () => {
     { id: "orders", label: "Orders" },
     { id: "gallery", label: "Gallery Images" },
     { id: "video-frames", label: "Video Frames" },
+    { id: "credit-requests", label: "Credit Requests" },
     { id: "subscriptions", label: "Subscriptions" },
     { id: "users", label: "Users" },
     { id: "settings", label: "Settings" },
@@ -104,6 +106,7 @@ const AdminPage = () => {
         {tab === "orders" && <AdminOrders />}
         {tab === "gallery" && <AdminGalleryImages />}
         {tab === "video-frames" && (isAdmin || isSubscriber) && <AdminVideoFrames isAdmin={isAdmin} />}
+        {tab === "credit-requests" && isAdmin && <AdminCreditRequests />}
         {tab === "subscriptions" && isAdmin && <AdminSubscriptions />}
         {tab === "users" && isAdmin && <AdminUsers />}
         {tab === "settings" && isAdmin && <AdminSettings />}
@@ -1037,6 +1040,24 @@ const AdminVideoFrames = ({ isAdmin }: { isAdmin: boolean }) => {
     });
   }, []);
 
+  // Fetch user's profile to display and check ar_credits
+  const { data: profile, refetch: refetchProfile } = useQuery({
+    queryKey: ["admin_profile", currentUserId],
+    queryFn: async () => {
+      if (!currentUserId) return null;
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("user_id", currentUserId)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!currentUserId,
+  });
+
+  const hasNoCredits = !isAdmin && (profile?.ar_credits ?? 0) <= 0;
+
   // Dynamically load MindAR compiler script on mount
   useEffect(() => {
     const scriptSrc = "https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image.prod.js";
@@ -1239,6 +1260,20 @@ const AdminVideoFrames = ({ isAdmin }: { isAdmin: boolean }) => {
 
       if (insertError) throw insertError;
 
+      // 3.5 Decrement non-admin's AR credits balance
+      if (!isAdmin) {
+        const { error: creditError } = await supabase
+          .from("profiles")
+          .update({ ar_credits: (profile?.ar_credits ?? 1) - 1 } as any)
+          .eq("user_id", user.id);
+        
+        if (creditError) {
+          console.warn("Credit decrement failed but frame registered:", creditError);
+        } else {
+          refetchProfile();
+        }
+      }
+
       // 4. Trigger synchronous combined compilation and propagation
       await syncCompiledTargets(true);
 
@@ -1314,20 +1349,31 @@ const AdminVideoFrames = ({ isAdmin }: { isAdmin: boolean }) => {
           </div>
         </div>
 
-        <button
-          type="submit"
-          disabled={uploading}
-          className="px-6 py-2 rounded-full bg-primary text-primary-foreground text-sm font-semibold flex items-center gap-2 disabled:opacity-50 hover:opacity-95 transition-opacity"
-        >
-          {uploading ? (
-            <>
-              <div className="animate-spin h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full" />
-              <span>{uploadProgress || "Uploading..."}</span>
-            </>
-          ) : (
-            "Create AR Frame Asset"
+        <div className="flex flex-col items-start gap-2">
+          <button
+            type="submit"
+            disabled={uploading || hasNoCredits}
+            className="px-6 py-2 rounded-full bg-primary text-primary-foreground text-sm font-semibold flex items-center gap-2 disabled:opacity-50 hover:opacity-95 transition-opacity"
+          >
+            {uploading ? (
+              <>
+                <div className="animate-spin h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full" />
+                <span>{uploadProgress || "Uploading..."}</span>
+              </>
+            ) : (
+              "Create AR Frame Asset"
+            )}
+          </button>
+          
+          {hasNoCredits && (
+            <p className="text-xs text-rose-500 font-semibold mt-2">
+              ⚠️ You have 0 AR Video Credits.{" "}
+              <a href="/buy-credits" className="underline hover:text-rose-600 transition-colors">
+                Buy Credits (₹50) to create a new frame
+              </a>
+            </p>
           )}
-        </button>
+        </div>
       </form>
 
       {/* Frame Cards List */}
@@ -1381,5 +1427,137 @@ const AdminVideoFrames = ({ isAdmin }: { isAdmin: boolean }) => {
     </div>
   );
 };
+
+// --- Credit Requests Manager ---
+function AdminCreditRequests() {
+  const queryClient = useQueryClient();
+
+  // 1. Fetch pending credit requests along with profiles
+  const { data: requests = [], isLoading, error } = useQuery({
+    queryKey: ["admin_credit_requests"],
+    queryFn: async () => {
+      const { data: reqs, error: reqsError } = await supabase
+        .from("credit_requests" as any)
+        .select("*")
+        .eq("status", "pending")
+        .order("created_at", { ascending: false });
+
+      if (reqsError) throw reqsError;
+      if (!reqs || reqs.length === 0) return [];
+
+      // Fetch profiles in batch for user accounts
+      const userIds = reqs.map((r: any) => r.user_id);
+      const { data: profiles, error: profilesError } = await supabase
+        .from("profiles")
+        .select("*")
+        .in("user_id", userIds);
+
+      if (profilesError) throw profilesError;
+
+      const profileMap = new Map(profiles?.map((p: any) => [p.user_id, p]) || []);
+      return reqs.map((req: any) => ({
+        ...req,
+        profile: profileMap.get(req.user_id) || null,
+      }));
+    },
+  });
+
+  // 2. Transactional Approval Mutation
+  const approveMutation = useMutation({
+    mutationFn: async (requestId: string) => {
+      const { data, error: rpcError } = await supabase.rpc("approve_credit_request", {
+        target_request_id: requestId,
+      });
+      if (rpcError) throw rpcError;
+      return data;
+    },
+    onSuccess: () => {
+      toast.success("Credit request approved! Credits successfully granted.");
+      queryClient.invalidateQueries({ queryKey: ["admin_credit_requests"] });
+    },
+    onError: (err: any) => {
+      toast.error("Approval failed: " + err.message);
+    },
+  });
+
+  if (isLoading) return <p className="text-muted-foreground text-sm text-left">Loading credit requests...</p>;
+  if (error) return <p className="text-destructive text-sm text-left">Error loading requests: {error.message}</p>;
+
+  return (
+    <div className="space-y-6 text-left">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="font-display text-xl font-bold text-foreground">Pending Credit Requests</h2>
+          <p className="text-xs text-muted-foreground">Verify payments and grant AR video frame credits atomically</p>
+        </div>
+        <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary">
+          {requests.length} Pending
+        </span>
+      </div>
+
+      {requests.length === 0 ? (
+        <div className="p-8 rounded-2xl border border-dashed border-border bg-card/50 text-center">
+          <p className="text-muted-foreground text-sm">No pending credit requests found.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {requests.map((req) => (
+            <div key={req.id} className="p-5 rounded-2xl border border-border bg-card shadow-sm flex flex-col justify-between space-y-4">
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  {req.profile?.avatar_url ? (
+                    <img src={req.profile.avatar_url} alt="Avatar" className="w-10 h-10 rounded-full object-cover border border-border" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-rose-500/10 text-rose-500 flex items-center justify-center font-bold text-sm">
+                      {req.profile?.display_name?.[0]?.toUpperCase() || "U"}
+                    </div>
+                  )}
+                  <div>
+                    <h4 className="font-semibold text-foreground text-sm truncate max-w-[200px]">
+                      {req.profile?.display_name || "Anonymous User"}
+                    </h4>
+                    <p className="text-xs text-muted-foreground font-mono truncate max-w-[200px]">
+                      ID: {req.user_id.slice(0, 8)}...
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-muted/40 border border-border/50 text-xs space-y-2">
+                  <p><strong>Amount Paid:</strong> <span className="text-foreground font-bold">₹{req.amount_paid}</span></p>
+                  <p><strong>Request ID:</strong> <span className="font-mono">{req.id}</span></p>
+                  <p><strong>Submitted:</strong> {new Date(req.created_at).toLocaleString()}</p>
+                  <p><strong>Active Credits:</strong> <span className="text-rose-500 font-semibold">{req.profile?.ar_credits ?? 0} Credits</span></p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-3 border-t border-border/50 gap-2">
+                {req.screenshot_url ? (
+                  <a
+                    href={req.screenshot_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3.5 py-2 rounded-full border border-border hover:bg-muted text-xs font-semibold text-foreground flex items-center gap-1.5 transition-colors"
+                  >
+                    🔍 View Receipt
+                  </a>
+                ) : (
+                  <span className="text-xs text-muted-foreground italic">No receipt uploaded</span>
+                )}
+
+                <button
+                  onClick={() => approveMutation.mutate(req.id)}
+                  disabled={approveMutation.isPending}
+                  className="px-4 py-2 rounded-full bg-green-600 hover:bg-green-700 text-white font-semibold text-xs transition-all shadow-md shadow-green-500/10 hover:scale-[1.02] active:scale-95 disabled:opacity-50 flex items-center gap-1"
+                >
+                  {approveMutation.isPending && approveMutation.variables === req.id ? "Approving..." : "✓ Approve Request"}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default AdminPage;
