@@ -142,22 +142,36 @@ const CartPage = () => {
 
       // Create order for each item
       for (const item of items) {
-        await supabase.from("orders").insert({
-          user_id: user?.id,
-          customer_name: name.trim(),
-          customer_phone: phone.trim(),
-          editing_style_id: item.editingStyleId || null,
-          size_id: item.sizeId || null,
-          frame_material_id: item.frameMaterialId || null,
-          total_price: item.price * item.quantity,
-          payment_method: paidViaUpi ? "upi" : "cod",
-          notes: [
-            item.type === "resin" ? `Resin: ${item.name} x${item.quantity}` : null,
-            address.trim(),
-            paidViaUpi && utrId ? `UPI Ref/UTR: ${utrId}` : null,
-            notes.trim(),
-          ].filter(Boolean).join(" | ") || null,
-        } as any);
+        const { data: order, error } = await supabase
+          .from("orders")
+          .insert({
+            user_id: user?.id,
+            customer_name: name.trim(),
+            customer_phone: phone.trim(),
+            editing_style_id: item.editingStyleId || null,
+            size_id: item.sizeId || null,
+            frame_material_id: item.frameMaterialId || null,
+            total_price: item.price * item.quantity,
+            payment_method: paidViaUpi ? "upi" : "cod",
+            notes: [
+              item.type === "resin" ? `Resin: ${item.name} x${item.quantity}` : null,
+              address.trim(),
+              paidViaUpi && utrId ? `UPI Ref/UTR: ${utrId}` : null,
+              notes.trim(),
+            ].filter(Boolean).join(" | ") || null,
+          } as any)
+          .select("id")
+          .single();
+
+        if (!error && order) {
+          try {
+            await supabase.functions.invoke("send-order-email", {
+              body: { orderId: order.id },
+            });
+          } catch (emailErr) {
+            console.error("Failed to trigger order confirmation email:", emailErr);
+          }
+        }
       }
 
       // WhatsApp message

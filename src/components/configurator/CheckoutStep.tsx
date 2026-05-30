@@ -158,6 +158,15 @@ const CheckoutStep = ({ config, selectedGalleryImage, onOrderPlaced }: CheckoutS
 
       if (error) throw error;
 
+      // Trigger automatic email confirmation in the background
+      try {
+        await supabase.functions.invoke("send-order-email", {
+          body: { orderId: order.id },
+        });
+      } catch (emailErr) {
+        console.error("Failed to trigger order confirmation email:", emailErr);
+      }
+
       // Use gallery-selected image if available, otherwise fetch style image
       let styleImageUrl: string | null = selectedGalleryImage || null;
       if (!styleImageUrl && config.editingStyleId) {
