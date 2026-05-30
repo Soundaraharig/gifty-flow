@@ -23,6 +23,7 @@ import BuyCreditsPage from "./pages/BuyCreditsPage";
 import NotFound from "./pages/NotFound";
 import ARFrameScanner from "./components/ARFrameScanner";
 import ScanFramePage from "./pages/ScanFramePage";
+import ChatAssistantPage from "./pages/ChatAssistantPage";
 
 const queryClient = new QueryClient();
 
@@ -50,6 +51,7 @@ const App = () => (
                 <Route path="/subscribe" element={<ProtectedRoute><SubscriptionPage /></ProtectedRoute>} />
                 <Route path="/buy-credits" element={<ProtectedRoute><BuyCreditsPage /></ProtectedRoute>} />
                 <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
+                <Route path="/assistant" element={<ChatAssistantPage />} />
                 <Route path="/scan/:frameId" element={<ARFrameScanner />} />
                 <Route path="/scan-frame" element={<ScanFramePage />} />
                 <Route path="*" element={<NotFound />} />

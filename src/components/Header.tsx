@@ -27,6 +27,9 @@ const Header = () => {
           <a href="/categories" className="hidden md:inline text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
             Categories
           </a>
+          <a href="/assistant" className="hidden md:inline text-sm font-medium text-primary hover:text-primary/80 transition-colors">
+            AI Assistant
+          </a>
           {/* VIP Crown - visible to all logged-in users */}
           {user && (
             <button
