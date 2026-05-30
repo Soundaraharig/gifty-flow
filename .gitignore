@@ -12,6 +12,20 @@ dist
 dist-ssr
 *.local
 
+# Environment and Secrets
+.env
+.env.local
+.env.production
+.env.development
+.env.test
+.env.*
+
+# Temporary Caches and OS files
+.tmp
+.temp
+supabase/.temp/
+Thumbs.db
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
