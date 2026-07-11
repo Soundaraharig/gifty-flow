@@ -8,6 +8,7 @@ import { useEditingStyles, useSizes, useFrameMaterials } from "@/hooks/useProduc
 import { useQuery } from "@tanstack/react-query";
 import { fetchCheckoutTotal } from "@/lib/productQueries";
 import { useCart } from "@/hooks/useCart";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
 import styleOilPainting from "@/assets/style-oil-painting.jpg";
@@ -43,6 +44,7 @@ const ConfiguratorPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { addItem } = useCart();
+  const { user } = useAuth();
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
   const preSelectedStyle = searchParams.get("style");
@@ -55,6 +57,27 @@ const ConfiguratorPage = () => {
     addonIds: [],
     selectedGalleryImage: preSelectedImg ? decodeURIComponent(preSelectedImg) : null,
   });
+
+  // Restore configuration state if coming back from login redirection
+  useEffect(() => {
+    const savedConfig = sessionStorage.getItem("pending_config");
+    if (savedConfig) {
+      try {
+        const parsed = JSON.parse(savedConfig);
+        setConfig((prev) => ({
+          ...prev,
+          sizeId: parsed.sizeId || prev.sizeId,
+          frameMaterialId: parsed.frameMaterialId || prev.frameMaterialId,
+          frameColorId: parsed.frameColorId || prev.frameColorId,
+          addonIds: parsed.addonIds || prev.addonIds,
+        }));
+        setShowCheckout(true);
+      } catch (e) {
+        console.error("Failed to restore pending config", e);
+      }
+      sessionStorage.removeItem("pending_config");
+    }
+  }, []);
   const { data: styles, isLoading: loadingStyles } = useEditingStyles();
   const { data: sizes, isLoading: loadingSizes } = useSizes();
   const { data: materials, isLoading: loadingMaterials } = useFrameMaterials();
@@ -328,7 +351,16 @@ const ConfiguratorPage = () => {
               </button>
             )}
             <button
-              onClick={() => setShowCheckout(true)}
+              onClick={() => {
+                if (!user) {
+                  sessionStorage.setItem("pending_config", JSON.stringify(config));
+                  const currentPath = window.location.pathname + window.location.search;
+                  sessionStorage.setItem("auth_redirect", currentPath);
+                  navigate(`/auth?redirect=${encodeURIComponent(currentPath)}`);
+                  return;
+                }
+                setShowCheckout(true);
+              }}
               disabled={!canBuy}
               className="relative px-8 py-3.5 rounded-full bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold text-base shadow-rose hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center gap-2">
               

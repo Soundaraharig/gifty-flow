@@ -4,10 +4,24 @@ import CategoryGrid from "@/components/CategoryGrid";
 import HowItWorks from "@/components/HowItWorks";
 import Testimonials from "@/components/Testimonials";
 import StatsAndCTA from "@/components/StatsAndCTA";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Camera } from "lucide-react";
+import { useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
 
 const Index = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (user) {
+      const pendingRedirect = sessionStorage.getItem("auth_redirect");
+      if (pendingRedirect) {
+        sessionStorage.removeItem("auth_redirect");
+        navigate(pendingRedirect, { replace: true });
+      }
+    }
+  }, [user, navigate]);
   return (
     <div className="min-h-screen bg-background relative">
       <Header />

@@ -40,14 +40,14 @@ const App = () => (
               <Routes>
                 <Route path="/auth" element={<AuthPage />} />
                 <Route path="/" element={<Index />} />
-                <Route path="/configure/photo-frames/styles" element={<ProtectedRoute><StyleCollectionPage /></ProtectedRoute>} />
-                <Route path="/configure/photo-frames" element={<ProtectedRoute><ConfiguratorPage /></ProtectedRoute>} />
+                <Route path="/configure/photo-frames/styles" element={<StyleCollectionPage />} />
+                <Route path="/configure/photo-frames" element={<ConfiguratorPage />} />
 
-                <Route path="/configure/resin-art" element={<ProtectedRoute><ResinConfiguratorPage /></ProtectedRoute>} />
-                <Route path="/style-gallery/:styleId" element={<ProtectedRoute><StyleGalleryPage /></ProtectedRoute>} />
-                <Route path="/categories" element={<ProtectedRoute><CategoriesPage /></ProtectedRoute>} />
+                <Route path="/configure/resin-art" element={<ResinConfiguratorPage />} />
+                <Route path="/style-gallery/:styleId" element={<StyleGalleryPage />} />
+                <Route path="/categories" element={<CategoriesPage />} />
                 <Route path="/my-orders" element={<ProtectedRoute><MyOrdersPage /></ProtectedRoute>} />
-                <Route path="/cart" element={<ProtectedRoute><CartPage /></ProtectedRoute>} />
+                <Route path="/cart" element={<CartPage />} />
                 <Route path="/subscribe" element={<ProtectedRoute><SubscriptionPage /></ProtectedRoute>} />
                 <Route path="/buy-credits" element={<ProtectedRoute><BuyCreditsPage /></ProtectedRoute>} />
                 <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />

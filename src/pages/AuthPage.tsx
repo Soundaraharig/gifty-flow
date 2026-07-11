@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import logo from "@/assets/logo.png";
@@ -8,11 +8,14 @@ import { toast } from "@/hooks/use-toast";
 const AuthPage = () => {
   const { user, loading, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  const queryRedirect = searchParams.get("redirect");
 
   if (loading) {
     return (
@@ -23,9 +26,21 @@ const AuthPage = () => {
   }
 
   if (user) {
-    navigate("/", { replace: true });
+    const sessionRedirect = sessionStorage.getItem("auth_redirect");
+    const redirectTo = sessionRedirect || queryRedirect || "/";
+    if (sessionRedirect) {
+      sessionStorage.removeItem("auth_redirect");
+    }
+    navigate(redirectTo, { replace: true });
     return null;
   }
+
+  const handleGoogleSignIn = async () => {
+    if (queryRedirect) {
+      sessionStorage.setItem("auth_redirect", queryRedirect);
+    }
+    await signInWithGoogle();
+  };
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -130,7 +145,7 @@ const AuthPage = () => {
         </div>
 
         <button
-          onClick={signInWithGoogle}
+          onClick={handleGoogleSignIn}
           className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-full border border-input bg-card text-foreground font-medium hover:bg-muted transition-colors"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">

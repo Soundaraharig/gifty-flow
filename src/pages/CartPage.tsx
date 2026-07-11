@@ -23,6 +23,13 @@ const CartPage = () => {
   const [name, setName] = useState(user?.user_metadata?.full_name || "");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+
+  // Prefill name when user becomes available
+  useEffect(() => {
+    if (user?.user_metadata?.full_name && !name) {
+      setName(user.user_metadata.full_name);
+    }
+  }, [user, name]);
   const [notes, setNotes] = useState("");
   const [upiId, setUpiId] = useState("");
   const [upiQrImage, setUpiQrImage] = useState("");
@@ -70,6 +77,10 @@ const CartPage = () => {
 
   // Once addresses load, decide mode
   useEffect(() => {
+    if (!user) {
+      setMode("new");
+      return;
+    }
     if (savedAddresses === undefined) return;
     if (savedAddresses.length > 0) {
       setMode("select");
@@ -81,7 +92,7 @@ const CartPage = () => {
     } else {
       setMode("new");
     }
-  }, [savedAddresses]);
+  }, [savedAddresses, user]);
 
   const selectAddress = (addr: SavedAddress) => {
     setSelectedAddressId(addr.id);
@@ -358,7 +369,7 @@ const CartPage = () => {
             </div>
 
             {/* Address selection mode */}
-            {savedAddresses && savedAddresses.length > 0 && (
+            {user && savedAddresses && savedAddresses.length > 0 && (
               <div className="flex gap-2 mb-5">
                 <button
                   onClick={switchToSelect}
@@ -386,7 +397,7 @@ const CartPage = () => {
             )}
 
             {/* Saved addresses list */}
-            {mode === "select" && savedAddresses && (
+            {user && mode === "select" && savedAddresses && (
               <div className="space-y-2.5 mb-6">
                 {savedAddresses.map((addr) => (
                   <button
@@ -418,7 +429,7 @@ const CartPage = () => {
             )}
 
             {/* New address form */}
-            {mode === "new" && (
+            {user && mode === "new" && (
               <div className="space-y-4 mb-6">
                 <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">Delivery Details</h3>
                 <input
@@ -445,113 +456,125 @@ const CartPage = () => {
               </div>
             )}
 
-            {/* Notes (always visible) */}
-            <div className="mb-6">
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Special notes (optional)"
-                rows={2}
-                className="w-full px-4 py-3 rounded-xl border border-input bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-              />
-            </div>
+            {/* Notes & UPI Payment section for authenticated users */}
+            {user ? (
+              <>
+                <div className="mb-6">
+                  <textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="Special notes (optional)"
+                    rows={2}
+                    className="w-full px-4 py-3 rounded-xl border border-input bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+                  />
+                </div>
 
-            {/* UPI Payment Section */}
-            {upiId && (
-              <div className="mb-6">
-                <button
-                  onClick={() => setShowUpi(!showUpi)}
-                  className="w-full flex items-center justify-between p-4 rounded-xl border border-border bg-card hover:bg-muted/30 transition-colors"
-                >
-                  <span className="flex items-center gap-2 font-semibold text-foreground text-sm">
-                    💳 Pay via UPI
-                  </span>
-                  <span className="text-muted-foreground text-xs">{showUpi ? "Hide" : "Show"}</span>
-                </button>
-                {showUpi && (
-                  <div className="mt-3 p-4 rounded-xl border border-primary/20 bg-primary/5 space-y-3">
-                    <p className="text-sm text-foreground">
-                      Send <span className="font-bold text-primary">₹{totalPrice}</span> to the UPI ID below:
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <code className="flex-1 px-3 py-2 rounded-lg bg-card border border-border text-foreground text-sm font-mono select-all">
-                        {upiId}
-                      </code>
-                      <button
-                        onClick={() => {
-                          navigator.clipboard.writeText(upiId);
-                          toast.success("UPI ID copied!");
-                        }}
-                        className="px-3 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition-opacity"
-                      >
-                        Copy
-                      </button>
-                    </div>
-                    {upiQrImage && (
-                      <div className="flex flex-col items-center gap-2 py-2">
-                        <img src={upiQrImage} alt="UPI QR Code" className="w-48 h-48 rounded-lg border border-border object-contain bg-white" />
+                {upiId && (
+                  <div className="mb-6">
+                    <button
+                      onClick={() => setShowUpi(!showUpi)}
+                      className="w-full flex items-center justify-between p-4 rounded-xl border border-border bg-card hover:bg-muted/30 transition-colors"
+                    >
+                      <span className="flex items-center gap-2 font-semibold text-foreground text-sm">
+                        💳 Pay via UPI
+                      </span>
+                      <span className="text-muted-foreground text-xs">{showUpi ? "Hide" : "Show"}</span>
+                    </button>
+                    {showUpi && (
+                      <div className="mt-3 p-4 rounded-xl border border-primary/20 bg-primary/5 space-y-3">
+                        <p className="text-sm text-foreground">
+                          Send <span className="font-bold text-primary">₹{totalPrice}</span> to the UPI ID below:
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <code className="flex-1 px-3 py-2 rounded-lg bg-card border border-border text-foreground text-sm font-mono select-all">
+                            {upiId}
+                          </code>
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(upiId);
+                              toast.success("UPI ID copied!");
+                            }}
+                            className="px-3 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition-opacity"
+                          >
+                            Copy
+                          </button>
+                        </div>
+                        {upiQrImage && (
+                          <div className="flex flex-col items-center gap-2 py-2">
+                            <img src={upiQrImage} alt="UPI QR Code" className="w-48 h-48 rounded-lg border border-border object-contain bg-white" />
+                            <a
+                              href={upiQrImage}
+                              download="upi-qr-code.png"
+                              className="text-xs text-primary font-medium hover:underline"
+                            >
+                              📥 Download QR Code
+                            </a>
+                          </div>
+                        )}
                         <a
-                          href={upiQrImage}
-                          download="upi-qr-code.png"
-                          className="text-xs text-primary font-medium hover:underline"
+                          href={`upi://pay?pa=${encodeURIComponent(upiId)}&am=${totalPrice}&cu=INR`}
+                          className="block w-full text-center py-2.5 rounded-lg bg-accent text-accent-foreground font-medium text-sm hover:opacity-90 transition-opacity"
                         >
-                          📥 Download QR Code
+                          📱 Open UPI App
                         </a>
+                        <div className="space-y-3 pt-2">
+                          <label className="flex items-start gap-2.5 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={paidViaUpi}
+                              onChange={(e) => setPaidViaUpi(e.target.checked)}
+                              className="w-4 h-4 rounded border-border text-primary focus:ring-ring mt-1"
+                            />
+                            <span className="text-sm font-medium text-foreground leading-tight">I have paid via UPI</span>
+                          </label>
+                          
+                          {paidViaUpi && (
+                            <div className="space-y-1.5 animate-fade-in pl-6">
+                              <label className="block text-[11px] font-semibold text-foreground uppercase tracking-wider">
+                                UPI UTR / Ref Number (12 digits) *
+                              </label>
+                              <input
+                                type="text"
+                                pattern="\d{12}"
+                                maxLength={12}
+                                value={utrId}
+                                onChange={(e) => {
+                                  const val = e.target.value.replace(/\D/g, "");
+                                  setUtrId(val);
+                                }}
+                                placeholder="e.g. 612345678901"
+                                className="w-full px-3 py-2 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring font-mono"
+                              />
+                              <p className="text-[10px] text-muted-foreground">
+                                Enter the 12-digit transaction/UTR reference ID shown on Google Pay, PhonePe, or Paytm receipt.
+                              </p>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     )}
-                    <a
-                      href={`upi://pay?pa=${encodeURIComponent(upiId)}&am=${totalPrice}&cu=INR`}
-                      className="block w-full text-center py-2.5 rounded-lg bg-accent text-accent-foreground font-medium text-sm hover:opacity-90 transition-opacity"
-                    >
-                      📱 Open UPI App
-                    </a>
-                    <div className="space-y-3 pt-2">
-                      <label className="flex items-start gap-2.5 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={paidViaUpi}
-                          onChange={(e) => setPaidViaUpi(e.target.checked)}
-                          className="w-4 h-4 rounded border-border text-primary focus:ring-ring mt-1"
-                        />
-                        <span className="text-sm font-medium text-foreground leading-tight">I have paid via UPI</span>
-                      </label>
-                      
-                      {paidViaUpi && (
-                        <div className="space-y-1.5 animate-fade-in pl-6">
-                          <label className="block text-[11px] font-semibold text-foreground uppercase tracking-wider">
-                            UPI UTR / Ref Number (12 digits) *
-                          </label>
-                          <input
-                            type="text"
-                            pattern="\d{12}"
-                            maxLength={12}
-                            value={utrId}
-                            onChange={(e) => {
-                              const val = e.target.value.replace(/\D/g, "");
-                              setUtrId(val);
-                            }}
-                            placeholder="e.g. 612345678901"
-                            className="w-full px-3 py-2 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring font-mono"
-                          />
-                          <p className="text-[10px] text-muted-foreground">
-                            Enter the 12-digit transaction/UTR reference ID shown on Google Pay, PhonePe, or Paytm receipt.
-                          </p>
-                        </div>
-                      )}
-                    </div>
                   </div>
                 )}
-              </div>
-            )}
 
-            {/* Action buttons */}
-            <button
-              onClick={handlePlaceOrder}
-              disabled={!isValid || placing}
-              className="w-full bg-primary text-primary-foreground py-4 rounded-full font-semibold text-base shadow-rose hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              {placing ? "Placing Order..." : "🎁 Place Order"}
-            </button>
+                <button
+                  onClick={handlePlaceOrder}
+                  disabled={!isValid || placing}
+                  className="w-full bg-primary text-primary-foreground py-4 rounded-full font-semibold text-base shadow-rose hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {placing ? "Placing Order..." : "🎁 Place Order"}
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => {
+                  sessionStorage.setItem("auth_redirect", "/cart");
+                  navigate("/auth?redirect=%2Fcart");
+                }}
+                className="w-full bg-primary text-primary-foreground py-4 rounded-full font-semibold text-base shadow-rose hover:opacity-95 active:scale-[0.99] hover:scale-[1.01] transition-all duration-200 flex items-center justify-center gap-2"
+              >
+                🔒 Sign In to Checkout
+              </button>
+            )}
             <button
               onClick={() => navigate("/categories")}
               className="w-full mt-3 py-3.5 rounded-full border-2 border-primary text-primary font-semibold text-base hover:bg-primary/5 active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2"
